@@ -156,6 +156,24 @@ mod actions {
             set!(world, (arena, counter));
         }
 
+        fn closeArena(self: @ContractState, arena_id: u32) {
+            let world = self.world_dispatcher.read();
+            let owner = get_caller_address();
+
+            let mut counter = get!(world, COUNTER_ID, Counter);
+            assert(counter.arena_count >= arena_id && arena_id > 0, 'Arena does not exist');
+
+            let mut arena = get!(world, arena_id, Arena);
+            assert(arena.owner == owner, 'Only owner can close arena');
+            assert(!arena.is_closed, 'Arena is already closed');
+
+            arena.is_closed = true;
+
+            // TODO: Distribute rewards, who lose 5 tournaments doesn’t participate
+
+            set!(world, (arena, counter));
+        }
+
         fn register(self: @ContractState, arena_id: u32) {
             let world = self.world_dispatcher.read();
             let player = get_caller_address();
