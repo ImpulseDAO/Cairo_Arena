@@ -108,6 +108,25 @@ mod actions {
 
             set!(world, (CharacterInfo { owner, name, attributes, strategy },));
         }
+
+        fn createArena(self: @ContractState, name: felt252, current_tier: SetTier) {
+            let world = self.world_dispatcher.read();
+            let owner = get_caller_address();
+
+            let mut counter = get!(world, COUNTER_ID, Counter);
+            counter.arena_count += 1;
+
+            let arena = Arena {
+                id: counter.arena_count,
+                owner,
+                name,
+                current_tier,
+                character_count: 0,
+                winner: contract_address_const::<0>(),
+            };
+
+            set!(world, (arena, counter));
+        }
     }
 }
 
