@@ -173,6 +173,55 @@ mod actions {
 
             set!(world, (arena, character, registered));
         }
+
+        fn play(self: @ContractState, arena_id: u32) {
+            let world = self.world_dispatcher.read();
+
+            let mut counter = get!(world, COUNTER_ID, Counter);
+            assert(counter.arena_count >= arena_id && arena_id > 0, 'Arena does not exist');
+
+            let mut arena = get!(world, arena_id, Arena);
+            assert(
+                arena.character_count > 0 && arena.character_count % 2 == 0, 'Arena is not ready'
+            );
+
+            let mut characters = ArrayTrait::new();
+            let mut i: usize = 0;
+            loop {
+                i += 1;
+                if i > arena.character_count {
+                    break;
+                }
+                let c = get!(world, (arena_id, i), ArenaCharacter);
+                characters.append(c);
+            };
+
+            let mut character_count = arena.character_count;
+            loop {
+                i = 0;
+                let mut winner_count = 0;
+                loop {
+                    i += 1;
+                    if i > character_count / 2 {
+                        break;
+                    }
+                    let c1 = characters.pop_front().unwrap();
+                    let c2 = characters.pop_front().unwrap();
+                    let winner = self.battle(c1, c2);
+                    characters.append(winner);
+                    winner_count += 1;
+                };
+                if winner_count == 1 {
+                    break;
+                }
+                character_count = winner_count;
+            };
+
+            let winner = characters.pop_front().unwrap();
+
+            arena.winner = winner.character_owner;
+            set!(world, (arena));
+        }
     }
 }
 
