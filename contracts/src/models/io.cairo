@@ -15,8 +15,6 @@ struct CharacterAttributes {
     agility: u8,
     vitality: u8,
     stamina: u8,
-    level: u8,
-    experience: u32,
 }
 
 #[derive(Serde, Copy, Drop, Introspect)]
