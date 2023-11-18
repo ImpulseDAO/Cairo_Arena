@@ -127,6 +127,52 @@ mod actions {
 
             set!(world, (arena, counter));
         }
+
+        fn register(self: @ContractState, arena_id: u32) {
+            let world = self.world_dispatcher.read();
+            let player = get_caller_address();
+
+            let mut counter = get!(world, COUNTER_ID, Counter);
+            assert(counter.arena_count >= arena_id && arena_id > 0, 'Arena does not exist');
+
+            let mut arena = get!(world, arena_id, (Arena));
+            arena.character_count += 1;
+
+            let character_info = get!(world, player, CharacterInfo);
+            assert(character_info.name != '', 'Character does not exist');
+
+            let mut registered = get!(world, (arena_id, player), ArenaRegistered);
+            assert(!registered.registered, 'Character already registered');
+            registered.registered = true;
+
+            let (min, max) = match arena.current_tier {
+                SetTier::Tier5 => (0, 0),
+                SetTier::Tier4 => (1, 1),
+                SetTier::Tier3 => (2, 4),
+                SetTier::Tier2 => (5, 8),
+                SetTier::Tier1 => (8, 255),
+            };
+            assert(
+                character_info.attributes.level >= min && character_info.attributes.level <= max,
+                'Character tier is not allowed'
+            );
+
+            let hp = character_info.attributes.vitality * HP_MULTIPLIER + BASE_HP;
+            let energy = character_info.attributes.stamina * ENERGY_MULTIPLIER + BASE_ENERGY;
+
+            let character = ArenaCharacter {
+                arena_id: arena.id,
+                character_count: arena.character_count,
+                name: character_info.name,
+                hp,
+                energy,
+                position: 0,
+                attributes: character_info.attributes,
+                character_owner: player,
+            };
+
+            set!(world, (arena, character, registered));
+        }
     }
 }
 
