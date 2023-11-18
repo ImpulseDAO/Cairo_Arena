@@ -62,6 +62,7 @@ trait IActions<TContractState> {
     fn play(self: @TContractState, arena_id: u32);
     fn level_up(self: @TContractState);
     fn assign_points(self: @TContractState, strength: u8, agility: u8, vitality: u8, stamina: u8);
+    fn update_strategy(self: @TContractState, strategy: ClassHash);
     fn battle(self: @TContractState, c1: ArenaCharacter, c2: ArenaCharacter) -> ArenaCharacter;
 }
 
@@ -299,6 +300,18 @@ mod actions {
 
             character_info.attributes = attributes;
             character_info.points -= 1;
+
+            set!(world, (character_info));
+        }
+
+        fn update_strategy(self: @ContractState, strategy: ClassHash) {
+            let world = self.world_dispatcher.read();
+            let player = get_caller_address();
+
+            // TODO: Consume XP / Experience Points to enable updates
+
+            let mut character_info = get!(world, player, CharacterInfo);
+            character_info.strategy = strategy;
 
             set!(world, (character_info));
         }
@@ -701,6 +714,42 @@ mod tests {
 
         actions_system.register(counter.arena_count);
         actions_system.register(counter.arena_count);
+    }
+
+    #[test]
+    #[available_gas(3000000000000000)]
+    fn test_update_strategy() {
+        let player = starknet::contract_address_const::<0x0>();
+
+        let mut models = array![
+            character_info::TEST_CLASS_HASH,
+            counter::TEST_CLASS_HASH,
+            arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+        ];
+
+        let world = spawn_test_world(models);
+
+        let contract_address = world
+            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+        let actions_system = IActionsDispatcher { contract_address };
+
+        actions_system
+            .createCharacter(
+                'c1',
+                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x123>()
+            );
+        let character = get!(world, player, (CharacterInfo));
+        assert(
+            character.strategy == starknet::class_hash_const::<0x123>(), 'strategy is not correct'
+        );
+
+        actions_system.update_strategy(starknet::class_hash_const::<0x321>());
+        let character = get!(world, player, (CharacterInfo));
+        assert(
+            character.strategy == starknet::class_hash_const::<0x321>(), 'strategy is not correct'
+        );
     }
 
     #[test]
