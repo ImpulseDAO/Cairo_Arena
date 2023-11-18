@@ -46,6 +46,12 @@ const HEAVY_HIT_CHANCE: u128 = 35;
 
 const REST_RECOVERY: u8 = 5;
 
+const MAX_LEVEL: u8 = 9;
+const MAX_STRENGTH: usize = 9;
+const MAX_AGILITY: usize = 9;
+const MAX_VITALITY: usize = 9;
+const MAX_STAMINA: usize = 9;
+
 #[starknet::interface]
 trait IActions<TContractState> {
     fn createCharacter(
@@ -55,6 +61,7 @@ trait IActions<TContractState> {
     fn register(self: @TContractState, arena_id: u32);
     fn play(self: @TContractState, arena_id: u32);
     fn battle(self: @TContractState, c1: ArenaCharacter, c2: ArenaCharacter) -> ArenaCharacter;
+    fn level_up(self: @TContractState);
 }
 
 #[starknet::interface]
@@ -237,6 +244,22 @@ mod actions {
             character_info.experience += get_gain_xp(character_info.level);
 
             set!(world, (arena, character_info));
+        }
+
+        fn level_up(self: @ContractState) {
+            let world = self.world_dispatcher.read();
+            let player = get_caller_address();
+
+            let mut character_info = get!(world, player, CharacterInfo);
+            assert(character_info.level < MAX_LEVEL, 'Max level reached');
+
+            let level_xp = get_level_xp(character_info.level);
+            assert(character_info.experience >= level_xp, 'Not enough experience');
+
+            character_info.experience -= level_xp;
+            character_info.level += 1;
+
+            set!(world, (character_info));
         }
 
         fn battle(self: @ContractState, c1: ArenaCharacter, c2: ArenaCharacter) -> ArenaCharacter {
