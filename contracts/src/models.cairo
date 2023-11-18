@@ -12,6 +12,7 @@ struct CharacterInfo {
     strategy: ClassHash,
     level: u8,
     experience: u32,
+    points: u8,
 }
 
 // models don't support Arrays yet, so we use a special counter model

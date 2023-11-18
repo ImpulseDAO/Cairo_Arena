@@ -47,10 +47,10 @@ const HEAVY_HIT_CHANCE: u128 = 35;
 const REST_RECOVERY: u8 = 5;
 
 const MAX_LEVEL: u8 = 9;
-const MAX_STRENGTH: usize = 9;
-const MAX_AGILITY: usize = 9;
-const MAX_VITALITY: usize = 9;
-const MAX_STAMINA: usize = 9;
+const MAX_STRENGTH: u8 = 9;
+const MAX_AGILITY: u8 = 9;
+const MAX_VITALITY: u8 = 9;
+const MAX_STAMINA: u8 = 9;
 
 #[starknet::interface]
 trait IActions<TContractState> {
@@ -60,8 +60,9 @@ trait IActions<TContractState> {
     fn createArena(self: @TContractState, name: felt252, current_tier: SetTier);
     fn register(self: @TContractState, arena_id: u32);
     fn play(self: @TContractState, arena_id: u32);
-    fn battle(self: @TContractState, c1: ArenaCharacter, c2: ArenaCharacter) -> ArenaCharacter;
     fn level_up(self: @TContractState);
+    fn assign_points(self: @TContractState, strength: u8, agility: u8, vitality: u8, stamina: u8);
+    fn battle(self: @TContractState, c1: ArenaCharacter, c2: ArenaCharacter) -> ArenaCharacter;
 }
 
 #[starknet::interface]
@@ -89,7 +90,8 @@ mod actions {
         SECOND_POS, RANGE_POS, MAX_TURNS, QUICK_ATC_ENERGY, PRECISE_ATC_ENERGY, HEAVY_ATC_ENERGY,
         QUICK_ATC_DAMAGE, PRECISE_ATC_DAMAGE, HEAVY_ATC_DAMAGE, AGI_INITIATIVE_MODIFIER,
         QUICK_ATC_INI, PRECISE_ATC_INI, HEAVY_ATC_INI, MOVE_INI, REST_INI, QUICK_HIT_CHANCE,
-        PRECISE_HIT_CHANCE, HEAVY_HIT_CHANCE, REST_RECOVERY
+        PRECISE_HIT_CHANCE, HEAVY_HIT_CHANCE, REST_RECOVERY, MAX_LEVEL, MAX_STRENGTH, MAX_AGILITY,
+        MAX_VITALITY, MAX_STAMINA
     };
 
     use super::{IStrategyDispatcherTrait, IStrategyLibraryDispatcher};
@@ -123,7 +125,11 @@ mod actions {
 
             set!(
                 world,
-                (CharacterInfo { owner, name, attributes, strategy, level: 0, experience: 0 },)
+                (
+                    CharacterInfo {
+                        owner, name, attributes, strategy, level: 0, experience: 0, points: 0
+                    },
+                )
             );
         }
 
@@ -258,6 +264,41 @@ mod actions {
 
             character_info.experience -= level_xp;
             character_info.level += 1;
+            character_info.points += 1;
+
+            set!(world, (character_info));
+        }
+
+        fn assign_points(
+            self: @ContractState, strength: u8, agility: u8, vitality: u8, stamina: u8
+        ) {
+            let world = self.world_dispatcher.read();
+            let player = get_caller_address();
+
+            let mut character_info = get!(world, player, CharacterInfo);
+            assert(strength + agility + vitality + stamina > 0, 'No points to assign');
+            assert(
+                character_info.points >= strength + agility + vitality + stamina,
+                'Not enough points'
+            );
+
+            let mut attributes = character_info.attributes;
+
+            attributes.strength += strength;
+            attributes.agility += agility;
+            attributes.vitality += vitality;
+            attributes.stamina += stamina;
+
+            assert(
+                attributes.strength <= MAX_STRENGTH
+                    && attributes.agility <= MAX_AGILITY
+                    && attributes.vitality <= MAX_VITALITY
+                    && attributes.stamina <= MAX_STAMINA,
+                'Attributes are not allowed'
+            );
+
+            character_info.attributes = attributes;
+            character_info.points -= 1;
 
             set!(world, (character_info));
         }
