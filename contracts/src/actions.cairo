@@ -148,6 +148,9 @@ mod actions {
                 current_tier,
                 character_count: 0,
                 winner: contract_address_const::<0>(),
+                total_golds: 5000,
+                total_rating: 0,
+                is_closed: false,
             };
 
             set!(world, (arena, counter));
@@ -194,7 +197,8 @@ mod actions {
                 position: 0,
                 attributes: character_info.attributes,
                 character_owner: player,
-                strategy: character_info.strategy
+                strategy: character_info.strategy,
+                rating: 0,
             };
 
             set!(world, (arena, character, registered));
@@ -207,6 +211,7 @@ mod actions {
             assert(counter.arena_count >= arena_id && arena_id > 0, 'Arena does not exist');
 
             let mut arena = get!(world, arena_id, Arena);
+            assert(!arena.is_closed, 'Arena is closed');
             assert(
                 arena.character_count > 0 && arena.character_count % 2 == 0, 'Arena is not ready'
             );
@@ -243,14 +248,16 @@ mod actions {
                 character_count = winner_count;
             };
 
-            let winner = characters.pop_front().unwrap();
+            // winner is of ArenaCharacter
+            let mut winner = characters.pop_front().unwrap();
 
             arena.winner = winner.character_owner;
 
             let mut character_info = get!(world, winner.character_owner, CharacterInfo);
             character_info.experience += get_gain_xp(character_info.level);
 
-            set!(world, (arena, character_info));
+            winner.rating += get_gain_xp(character_info.level);
+            set!(world, (arena, character_info, winner));
         }
 
         fn level_up(self: @ContractState) {
