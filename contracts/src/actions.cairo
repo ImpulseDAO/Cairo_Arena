@@ -302,3 +302,349 @@ mod actions {
     }
 }
 
+
+#[cfg(test)]
+mod tests {
+    use starknet::class_hash::Felt252TryIntoClassHash;
+
+    // import world dispatcher
+    use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
+
+    // import test utils
+    use dojo::test_utils::{spawn_test_world, deploy_contract};
+
+    // import models
+    use dojo_arena::models::{character_info, counter, arena, arena_character};
+    use dojo_arena::models::{CharacterInfo, Counter, Arena, ArenaCharacter};
+
+    use dojo_arena::models::io::{InitialAttributes, SetTier};
+
+    // import actions
+    use super::{
+        actions, IActionsDispatcher, IActionsDispatcherTrait, COUNTER_ID, HP_MULTIPLIER, BASE_HP,
+        ENERGY_MULTIPLIER, BASE_ENERGY
+    };
+
+    use debug::PrintTrait;
+
+    #[test]
+    #[available_gas(3000000000000000)]
+    fn test_create_character() {
+        let player = starknet::contract_address_const::<0x0>();
+
+        let mut models = array![
+            character_info::TEST_CLASS_HASH,
+            counter::TEST_CLASS_HASH,
+            arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+        ];
+
+        let world = spawn_test_world(models);
+
+        let contract_address = world
+            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+        let actions_system = IActionsDispatcher { contract_address };
+
+        actions_system
+            .createCharacter(
+                'asten',
+                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x123>()
+            );
+
+        let character = get!(world, player, (CharacterInfo));
+
+        assert(character.name == 'asten', 'name is not correct');
+        assert(character.attributes.strength == 2, 'strength is not correct');
+        assert(character.attributes.agility == 2, 'agility is not correct');
+        assert(character.attributes.vitality == 3, 'vitality is not correct');
+        assert(character.attributes.stamina == 2, 'stamina is not correct');
+    }
+
+    #[test]
+    #[should_panic]
+    #[available_gas(3000000000000000)]
+    fn test_create_character_wrong_init_attributes() {
+        let player = starknet::contract_address_const::<0x0>();
+
+        let mut models = array![
+            character_info::TEST_CLASS_HASH,
+            counter::TEST_CLASS_HASH,
+            arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+        ];
+
+        let world = spawn_test_world(models);
+
+        let contract_address = world
+            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+        let actions_system = IActionsDispatcher { contract_address };
+
+        actions_system
+            .createCharacter(
+                'asten',
+                InitialAttributes { strength: 2, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x123>()
+            );
+    }
+
+    #[test]
+    #[available_gas(3000000000000000)]
+    fn test_create_arena() {
+        let player = starknet::contract_address_const::<0x0>();
+
+        let mut models = array![
+            character_info::TEST_CLASS_HASH,
+            counter::TEST_CLASS_HASH,
+            arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+        ];
+
+        let world = spawn_test_world(models);
+
+        let contract_address = world
+            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+        let actions_system = IActionsDispatcher { contract_address };
+
+        actions_system.createArena('Sky Arena', SetTier::Tier3);
+
+        let counter = get!(world, COUNTER_ID, (Counter));
+        assert(counter.arena_count == 1, 'arena count is not correct');
+
+        let arena = get!(world, counter.arena_count, (Arena));
+        assert(arena.name == 'Sky Arena', 'name is not correct');
+        assert(arena.owner == player, 'owner is not correct');
+        assert(arena.current_tier == SetTier::Tier3, 'Tier is not correct');
+        assert(arena.character_count == 0, 'Character count is not correct');
+        assert(arena.winner == starknet::contract_address_const::<0>(), 'winner is not correct');
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_register_arena_not_exists() {
+        let player = starknet::contract_address_const::<0x0>();
+
+        let mut models = array![
+            character_info::TEST_CLASS_HASH,
+            counter::TEST_CLASS_HASH,
+            arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+        ];
+
+        let world = spawn_test_world(models);
+
+        let contract_address = world
+            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+        let actions_system = IActionsDispatcher { contract_address };
+
+        actions_system
+            .createCharacter(
+                'asten',
+                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x123>()
+            );
+
+        actions_system.register(1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_register_character_not_exists() {
+        let player = starknet::contract_address_const::<0x0>();
+
+        let mut models = array![
+            character_info::TEST_CLASS_HASH,
+            counter::TEST_CLASS_HASH,
+            arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+        ];
+
+        let world = spawn_test_world(models);
+
+        let contract_address = world
+            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+        let actions_system = IActionsDispatcher { contract_address };
+
+        actions_system.createArena('Sky Arena', SetTier::Tier3);
+
+        actions_system.register(1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_register_tier_not_match() {
+        let player = starknet::contract_address_const::<0x0>();
+
+        let mut models = array![
+            character_info::TEST_CLASS_HASH,
+            counter::TEST_CLASS_HASH,
+            arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+        ];
+
+        let world = spawn_test_world(models);
+
+        let contract_address = world
+            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+        let actions_system = IActionsDispatcher { contract_address };
+
+        actions_system
+            .createCharacter(
+                'asten',
+                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x123>()
+            );
+        actions_system.createArena('Sky Arena', SetTier::Tier3);
+
+        actions_system.register(1);
+    }
+
+    #[test]
+    #[available_gas(3000000000000000)]
+    fn test_register() {
+        let player = starknet::contract_address_const::<0x0>();
+
+        let mut models = array![
+            character_info::TEST_CLASS_HASH,
+            counter::TEST_CLASS_HASH,
+            arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+        ];
+
+        let world = spawn_test_world(models);
+
+        let contract_address = world
+            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+        let actions_system = IActionsDispatcher { contract_address };
+
+        actions_system
+            .createCharacter(
+                'asten',
+                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x123>()
+            );
+        actions_system.createArena('Sky Arena', SetTier::Tier5);
+
+        actions_system.register(1);
+
+        let counter = get!(world, COUNTER_ID, (Counter));
+        let arena = get!(world, counter.arena_count, (Arena));
+        assert(arena.character_count == 1, 'Character count is not correct');
+
+        let character = get!(world, (arena.id, arena.character_count), (ArenaCharacter));
+        assert(character.name == 'asten', 'name is not correct');
+        assert(character.attributes.strength == 2, 'strength is not correct');
+        assert(character.attributes.agility == 2, 'agility is not correct');
+        assert(character.attributes.vitality == 3, 'vitality is not correct');
+        assert(character.attributes.stamina == 2, 'stamina is not correct');
+        assert(character.character_owner == player, 'owner is not correct');
+        assert(character.position == 0, 'position is not correct');
+
+        let hp = 3 * HP_MULTIPLIER + BASE_HP;
+        let energy = 2 * ENERGY_MULTIPLIER + BASE_ENERGY;
+        assert(character.hp == hp, 'hp is not correct');
+        assert(character.energy == energy, 'energy is not correct');
+    }
+
+    #[test]
+    #[should_panic]
+    #[available_gas(3000000000000000)]
+    fn test_play_arena_not_ready() {
+        let player = starknet::contract_address_const::<0x0>();
+
+        let mut models = array![
+            character_info::TEST_CLASS_HASH,
+            counter::TEST_CLASS_HASH,
+            arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+        ];
+
+        let world = spawn_test_world(models);
+
+        let contract_address = world
+            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+        let actions_system = IActionsDispatcher { contract_address };
+
+        actions_system
+            .createCharacter(
+                'asten',
+                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x123>()
+            );
+        actions_system.createArena('Sky Arena', SetTier::Tier5);
+
+        let counter = get!(world, COUNTER_ID, (Counter));
+
+        actions_system.register(counter.arena_count);
+
+        actions_system.play(counter.arena_count);
+    }
+
+    #[test]
+    #[should_panic]
+    #[available_gas(3000000000000000)]
+    fn test_play_player_already_registered() {
+        let player = starknet::contract_address_const::<0x0>();
+
+        let mut models = array![
+            character_info::TEST_CLASS_HASH,
+            counter::TEST_CLASS_HASH,
+            arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+        ];
+
+        let world = spawn_test_world(models);
+
+        let contract_address = world
+            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+        let actions_system = IActionsDispatcher { contract_address };
+
+        actions_system
+            .createCharacter(
+                'c1',
+                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x123>()
+            );
+        actions_system.createArena('Sky Arena', SetTier::Tier5);
+
+        let counter = get!(world, COUNTER_ID, (Counter));
+
+        actions_system.register(counter.arena_count);
+        actions_system.register(counter.arena_count);
+    }
+
+    #[test]
+    #[available_gas(3000000000000000)]
+    fn test_play() {
+        let player = starknet::contract_address_const::<0x0>();
+
+        let mut models = array![
+            character_info::TEST_CLASS_HASH,
+            counter::TEST_CLASS_HASH,
+            arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+        ];
+
+        let world = spawn_test_world(models);
+
+        let contract_address = world
+            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+        let actions_system = IActionsDispatcher { contract_address };
+
+        actions_system
+            .createCharacter(
+                'c1',
+                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x123>()
+            );
+
+        actions_system.createArena('Sky Arena', SetTier::Tier5);
+
+        let counter = get!(world, COUNTER_ID, (Counter));
+
+        actions_system.register(counter.arena_count);
+    // actions_system.register(counter.arena_count);
+
+    // actions_system.play(counter.arena_count);
+    }
+}
