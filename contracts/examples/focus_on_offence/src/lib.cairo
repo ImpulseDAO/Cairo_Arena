@@ -3,14 +3,14 @@ mod io;
 use io::{CharacterState, BattleAction};
 
 #[starknet::interface]
-trait IBattleActionLibrary<TContractState> {
+trait IStrategy<TContractState> {
     fn determin_action(
         self: @TContractState, my_state: CharacterState, opponent_state: CharacterState
     ) -> BattleAction;
 }
 
 #[starknet::contract]
-mod BattleActionLibrary {
+mod Strategy {
     use starknet::get_caller_address;
     use starknet::ContractAddress;
 
@@ -20,7 +20,7 @@ mod BattleActionLibrary {
     struct Storage {}
 
     #[external(v0)]
-    impl BattleActionLibrary of super::IBattleActionLibrary<ContractState> {
+    impl Strategy of super::IStrategy<ContractState> {
         fn determin_action(
             self: @ContractState, my_state: CharacterState, opponent_state: CharacterState
         ) -> BattleAction {
