@@ -222,6 +222,83 @@ mod actions {
             arena.winner = winner.character_owner;
             set!(world, (arena));
         }
+
+        fn battle(self: @ContractState, c1: ArenaCharacter, c2: ArenaCharacter) -> ArenaCharacter {
+            let mut c1_state = CharacterState {
+                hp: c1.hp, position: FIRST_POS, energy: c1.energy, consecutive_rest_count: 0,
+            };
+
+            let mut c2_state = CharacterState {
+                hp: c2.hp, position: SECOND_POS, energy: c2.energy, consecutive_rest_count: 0,
+            };
+
+            let mut c1_initiative: u8 = 0;
+            let mut c2_initiative: u8 = 0;
+            let mut turns: u8 = 0;
+
+            let mut winner = c1.clone();
+            loop {
+                if turns >= 25 {
+                    if c1_state.hp <= c2_state.hp {
+                        winner = c2;
+                        break;
+                    }
+                }
+                turns += 1;
+
+                let mut c1_action: BattleAction = determin_action(c1_state, c2_state);
+                let mut c2_action: BattleAction = determin_action(c2_state, c1_state);
+
+                if c1_action == BattleAction::Rest {
+                    c1_state.consecutive_rest_count += 1;
+                } else {
+                    c1_state.consecutive_rest_count = 0;
+                }
+
+                if c2_action == BattleAction::Rest {
+                    c2_state.consecutive_rest_count += 1;
+                } else {
+                    c2_state.consecutive_rest_count = 0;
+                }
+
+                c1_initiative = calculate_initiative(c1_action, c1.attributes.agility);
+                c2_initiative = calculate_initiative(c2_action, c2.attributes.agility);
+
+                let mut is_c1_first: bool = true;
+
+                if c1_initiative > c2_initiative {
+                    is_c1_first = false;
+                } else if c1_initiative == c2_initiative {
+                    if c1.attributes.agility < c2.attributes.agility {
+                        is_c1_first = false;
+                    }
+                }
+
+                if is_c1_first {
+                    execute_action(c1_action, ref c1_state, ref c2_state, @c1, @c2);
+                    if c2_state.hp == 0 {
+                        break;
+                    }
+                    execute_action(c2_action, ref c2_state, ref c1_state, @c2, @c1);
+                    if c1_state.hp == 0 {
+                        winner = c2;
+                        break;
+                    }
+                } else {
+                    execute_action(c2_action, ref c2_state, ref c1_state, @c1, @c2);
+                    if c1_state.hp == 0 {
+                        winner = c2;
+                        break;
+                    }
+                    execute_action(c1_action, ref c1_state, ref c2_state, @c2, @c1);
+                    if c2_state.hp == 0 {
+                        break;
+                    }
+                }
+            };
+
+            winner
+        }
     }
 }
 
