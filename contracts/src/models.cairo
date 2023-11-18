@@ -43,6 +43,7 @@ struct ArenaCharacter {
     position: u8,
     attributes: CharacterAttributes,
     character_owner: ContractAddress,
+    strategy: ClassHash,
 }
 
 #[derive(Model, Drop, Serde)]

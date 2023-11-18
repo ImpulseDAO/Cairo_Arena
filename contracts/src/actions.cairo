@@ -57,6 +57,13 @@ trait IActions<TContractState> {
     fn battle(self: @TContractState, c1: ArenaCharacter, c2: ArenaCharacter) -> ArenaCharacter;
 }
 
+#[starknet::interface]
+trait IStrategy<TContractState> {
+    fn determin_action(
+        self: @TContractState, my_state: CharacterState, opponent_state: CharacterState
+    ) -> BattleAction;
+}
+
 // dojo decorator
 #[dojo::contract]
 mod actions {
@@ -76,6 +83,8 @@ mod actions {
         QUICK_ATC_INI, PRECISE_ATC_INI, HEAVY_ATC_INI, MOVE_INI, REST_INI, QUICK_HIT_CHANCE,
         PRECISE_HIT_CHANCE, HEAVY_HIT_CHANCE, REST_RECOVERY
     };
+
+    use super::{IStrategyDispatcherTrait, IStrategyLibraryDispatcher};
 
     use debug::PrintTrait;
 
@@ -169,6 +178,7 @@ mod actions {
                 position: 0,
                 attributes: character_info.attributes,
                 character_owner: player,
+                strategy: character_info.strategy
             };
 
             set!(world, (arena, character, registered));
@@ -245,6 +255,12 @@ mod actions {
                     }
                 }
                 turns += 1;
+
+                IStrategyLibraryDispatcher { class_hash: c1.strategy }
+                    .determin_action(c1_state, c2_state);
+
+                IStrategyLibraryDispatcher { class_hash: c2.strategy }
+                    .determin_action(c2_state, c1_state);
 
                 let mut c1_action: BattleAction = determin_action(c1_state, c2_state);
                 let mut c2_action: BattleAction = determin_action(c2_state, c1_state);
