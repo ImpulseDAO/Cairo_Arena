@@ -81,6 +81,58 @@ fn get_movement(agility: u8) -> u8 {
     }
 }
 
+fn get_gain_xp(level: u8) -> u32 {
+    if level == 0 {
+        300
+    } else if level == 1 {
+        600
+    } else if level == 2 {
+        600
+    } else if level == 3 {
+        1350
+    } else if level == 4 {
+        3240
+    } else if level == 5 {
+        8100
+    } else if level == 6 {
+        18225
+    } else if level == 7 {
+        48600
+    } else if level == 8 {
+        131220
+    } else if level == 9 {
+        328050
+    } else {
+        0
+    }
+}
+
+fn get_level_xp(level: u8) -> u32 {
+    if level == 0 {
+        300
+    } else if level == 1 {
+        600
+    } else if level == 2 {
+        1800
+    } else if level == 3 {
+        5400
+    } else if level == 4 {
+        16200
+    } else if level == 5 {
+        48600
+    } else if level == 6 {
+        145800
+    } else if level == 7 {
+        437400
+    } else if level == 8 {
+        1312200
+    } else if level == 9 {
+        3936600
+    } else {
+        2147483647
+    }
+}
+
 fn new_pos_and_hit(
     attacker_pos: u8, defender_pos: u8, attacker_agility: u8, chance: u128
 ) -> (u8, bool) {

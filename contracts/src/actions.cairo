@@ -74,7 +74,8 @@ mod actions {
         InitialAttributes, CharacterAttributes, SetTier, BattleAction, CharacterState, Direction
     };
     use dojo_arena::utils::{
-        determin_action, new_pos_and_hit, new_pos_and_steps, calculate_initiative, execute_action
+        determin_action, new_pos_and_hit, new_pos_and_steps, calculate_initiative, execute_action,
+        get_gain_xp, get_level_xp
     };
     use super::{
         IActions, HP_MULTIPLIER, BASE_HP, ENERGY_MULTIPLIER, BASE_ENERGY, COUNTER_ID, FIRST_POS,
@@ -109,13 +110,14 @@ mod actions {
                 agility: 1 + attributes.agility,
                 vitality: 1 + attributes.vitality,
                 stamina: 1 + attributes.stamina,
-                level: 0,
-                experience: 0,
             };
 
             let owner = get_caller_address();
 
-            set!(world, (CharacterInfo { owner, name, attributes, strategy },));
+            set!(
+                world,
+                (CharacterInfo { owner, name, attributes, strategy, level: 0, experience: 0 },)
+            );
         }
 
         fn createArena(self: @ContractState, name: felt252, current_tier: SetTier) {
@@ -162,7 +164,7 @@ mod actions {
                 SetTier::Tier1 => (8, 255),
             };
             assert(
-                character_info.attributes.level >= min && character_info.attributes.level <= max,
+                character_info.level >= min && character_info.level <= max,
                 'Character tier is not allowed'
             );
 
@@ -230,7 +232,11 @@ mod actions {
             let winner = characters.pop_front().unwrap();
 
             arena.winner = winner.character_owner;
-            set!(world, (arena));
+
+            let mut character_info = get!(world, winner.character_owner, CharacterInfo);
+            character_info.experience += get_gain_xp(character_info.level);
+
+            set!(world, (arena, character_info));
         }
 
         fn battle(self: @ContractState, c1: ArenaCharacter, c2: ArenaCharacter) -> ArenaCharacter {

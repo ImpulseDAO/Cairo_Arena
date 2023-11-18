@@ -10,6 +10,8 @@ struct CharacterInfo {
     name: felt252,
     attributes: CharacterAttributes,
     strategy: ClassHash,
+    level: u8,
+    experience: u32,
 }
 
 // models don't support Arrays yet, so we use a special counter model
