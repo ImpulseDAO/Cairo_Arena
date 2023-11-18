@@ -256,14 +256,18 @@ mod actions {
                 }
                 turns += 1;
 
-                IStrategyLibraryDispatcher { class_hash: c1.strategy }
+                let mut c1_action: BattleAction = IStrategyLibraryDispatcher {
+                    class_hash: c1.strategy
+                }
                     .determin_action(c1_state, c2_state);
 
-                IStrategyLibraryDispatcher { class_hash: c2.strategy }
+                let mut c2_action: BattleAction = IStrategyLibraryDispatcher {
+                    class_hash: c2.strategy
+                }
                     .determin_action(c2_state, c1_state);
 
-                let mut c1_action: BattleAction = determin_action(c1_state, c2_state);
-                let mut c2_action: BattleAction = determin_action(c2_state, c1_state);
+                // let mut c1_action: BattleAction = determin_action(c1_state, c2_state);
+                // let mut c2_action: BattleAction = determin_action(c2_state, c1_state);
 
                 if c1_action == BattleAction::Rest {
                     c1_state.consecutive_rest_count += 1;
