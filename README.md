@@ -139,3 +139,27 @@ sozo execute -c 1 0x47c92218dfdaac465ad724f028f0f075b1c05c9ff9555d0e426c025e45c0
 ```bash
 sozo model get Arena 1 --world 0x13dfc87155d415ae384a35ba4333dfe160645ad7c83dc8b5812bd7ade9d69d6 --rpc-url http://localhost:5050
 ```
+
+### Leveling up
+
+```bash
+sozo execute 0x47c92218dfdaac465ad724f028f0f075b1c05c9ff9555d0e426c025e45c035 level_up --rpc-url http://localhost:5050 --account-address 0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973  --private-key 0x1800000000300000180000000000030000000000003006001800006600
+```
+
+### Assign points
+
+```bash
+sozo execute -c 0,0,0,1 0x47c92218dfdaac465ad724f028f0f075b1c05c9ff9555d0e426c025e45c035 assign_points --rpc-url http://localhost:5050 --account-address 0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973  --private-key 0x1800000000300000180000000000030000000000003006001800006600
+```
+
+### Update Strategy
+
+```bash
+sozo execute -c 0x0057dfdc7b7f813288e54f6a2ea0d2077f7c54a643620ef2b8074a58589c959d 0x47c92218dfdaac465ad724f028f0f075b1c05c9ff9555d0e426c025e45c035 update_strategy --rpc-url http://localhost:5050 --account-address 0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973  --private-key 0x1800000000300000180000000000030000000000003006001800006600
+```
+
+### Close Arena And Distribute Rewards
+
+```bash
+sozo execute -c 1 0x47c92218dfdaac465ad724f028f0f075b1c05c9ff9555d0e426c025e45c035 closeArena --rpc-url http://localhost:5050 --account-address 0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973  --private-key 0x1800000000300000180000000000030000000000003006001800006600
+```
