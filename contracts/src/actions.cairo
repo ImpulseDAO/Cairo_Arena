@@ -297,6 +297,7 @@ mod actions {
             character_info.experience += get_gain_xp(character_info.level);
 
             winner.rating += get_gain_xp(character_info.level);
+            arena.total_rating += get_gain_xp(character_info.level);
             set!(world, (arena, character_info, winner));
         }
 
@@ -889,15 +890,21 @@ mod tests {
         assert(character_info.golds == 3500, 'golds is not correct');
     }
 
+    mod testing_strategies;
+    use testing_strategies::{Strategy};
+
     #[test]
     #[available_gas(3000000000000000)]
     fn test_play() {
         let player = starknet::contract_address_const::<0x0>();
+        let player2 = starknet::contract_address_const::<0x1>();
 
         let mut models = array![
             character_info::TEST_CLASS_HASH,
+            character_info::TEST_CLASS_HASH,
             counter::TEST_CLASS_HASH,
             arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
             arena_character::TEST_CLASS_HASH,
         ];
 
@@ -905,22 +912,67 @@ mod tests {
 
         let contract_address = world
             .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+
         let actions_system = IActionsDispatcher { contract_address };
 
-        actions_system
-            .createCharacter(
-                'c1',
-                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
-                starknet::class_hash_const::<0x123>()
-            );
+        let character_info_1 = CharacterInfo {
+            owner: player,
+            name: 'c1',
+            attributes: CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+            strategy: Strategy::TEST_CLASS_HASH.try_into().unwrap(),
+            level: 0,
+            experience: 0,
+            points: 0,
+            golds: 0,
+        };
+
+        let character_info_2 = CharacterInfo {
+            owner: player2,
+            name: 'c1',
+            attributes: CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+            strategy: Strategy::TEST_CLASS_HASH.try_into().unwrap(),
+            level: 0,
+            experience: 0,
+            points: 0,
+            golds: 0,
+        };
 
         actions_system.createArena('Sky Arena', SetTier::Tier5);
+        let mut arena = get!(world, 1, (Arena));
+        arena.character_count = 2;
+        set!(world, (arena, character_info_1, character_info_2));
 
-        let counter = get!(world, COUNTER_ID, (Counter));
+        let c1 = ArenaCharacter {
+            arena_id: 1,
+            character_count: 1,
+            name: 'c1',
+            hp: 30,
+            energy: 26,
+            position: 0,
+            attributes: CharacterAttributes { strength: 2, agility: 2, vitality: 3, stamina: 2, },
+            character_owner: player,
+            strategy: Strategy::TEST_CLASS_HASH.try_into().unwrap(),
+            rating: 30,
+        };
 
-        actions_system.register(counter.arena_count);
-    // actions_system.register(counter.arena_count);
+        let c2 = ArenaCharacter {
+            arena_id: 1,
+            character_count: 2,
+            name: 'c2',
+            hp: 30,
+            energy: 26,
+            position: 0,
+            attributes: CharacterAttributes { strength: 2, agility: 2, vitality: 3, stamina: 2, },
+            character_owner: player2,
+            strategy: Strategy::TEST_CLASS_HASH.try_into().unwrap(),
+            rating: 70,
+        };
 
-    // actions_system.play(counter.arena_count);
+        set!(world, (c1, c2));
+
+        actions_system.play(1);
+
+        let arena = get!(world, 1, (Arena));
+        arena.winner.print();
     }
 }
