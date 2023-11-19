@@ -11,18 +11,18 @@ enum SetTier {
 
 #[derive(Serde, Copy, Drop, Introspect)]
 struct CharacterAttributes {
-    strength: u8,
-    agility: u8,
-    vitality: u8,
-    stamina: u8,
+    strength: u32,
+    agility: u32,
+    vitality: u32,
+    stamina: u32,
 }
 
 #[derive(Serde, Copy, Drop, Introspect)]
 struct InitialAttributes {
-    strength: u8,
-    agility: u8,
-    vitality: u8,
-    stamina: u8,
+    strength: u32,
+    agility: u32,
+    vitality: u32,
+    stamina: u32,
 }
 
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
@@ -37,10 +37,10 @@ enum BattleAction {
 
 #[derive(Serde, Copy, Drop, Introspect)]
 struct CharacterState {
-    hp: u8,
-    position: u8,
-    energy: u8,
-    consecutive_rest_count: u8,
+    hp: u32,
+    position: u32,
+    energy: u32,
+    consecutive_rest_count: u32,
 }
 
 #[derive(Serde, Copy, Drop, Introspect)]

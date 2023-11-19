@@ -6,51 +6,51 @@ use dojo_arena::models::io::{
 use dojo_arena::models::{ArenaCharacter};
 
 
-const HP_MULTIPLIER: u8 = 10;
-const BASE_HP: u8 = 90;
+const HP_MULTIPLIER: u32 = 10;
+const BASE_HP: u32 = 90;
 
-const ENERGY_MULTIPLIER: u8 = 3;
-const BASE_ENERGY: u8 = 20;
+const ENERGY_MULTIPLIER: u32 = 3;
+const BASE_ENERGY: u32 = 20;
 
 // const NUMBER_OF_PLAYERS: u32 = 4;
 
 const COUNTER_ID: u32 = 99999999;
 
-const FIRST_POS: u8 = 6;
-const SECOND_POS: u8 = 9;
-const RANGE_POS: u8 = 15;
-const MAX_TURNS: u8 = 25;
+const FIRST_POS: u32 = 6;
+const SECOND_POS: u32 = 9;
+const RANGE_POS: u32 = 15;
+const MAX_TURNS: u32 = 25;
 
-const AGI_INITIATIVE_MODIFIER: u8 = 25;
+const AGI_INITIATIVE_MODIFIER: u32 = 25;
 // Base_Quick_Atack_Initiative
-const QUICK_ATC_INI: u8 = 10;
+const QUICK_ATC_INI: u32 = 10;
 // Base_Precise_Atack_Initiative
-const PRECISE_ATC_INI: u8 = 15;
+const PRECISE_ATC_INI: u32 = 15;
 // Base_Heavy_Atack_Initiative
-const HEAVY_ATC_INI: u8 = 20;
+const HEAVY_ATC_INI: u32 = 20;
 // Base Move Initiative
-const MOVE_INI: u8 = 8;
-const REST_INI: u8 = 8;
+const MOVE_INI: u32 = 8;
+const REST_INI: u32 = 8;
 
-const QUICK_ATC_ENERGY: u8 = 2;
-const PRECISE_ATC_ENERGY: u8 = 4;
-const HEAVY_ATC_ENERGY: u8 = 6;
+const QUICK_ATC_ENERGY: u32 = 2;
+const PRECISE_ATC_ENERGY: u32 = 4;
+const HEAVY_ATC_ENERGY: u32 = 6;
 
-const QUICK_ATC_DAMAGE: u8 = 5;
-const PRECISE_ATC_DAMAGE: u8 = 10;
-const HEAVY_ATC_DAMAGE: u8 = 20;
+const QUICK_ATC_DAMAGE: u32 = 5;
+const PRECISE_ATC_DAMAGE: u32 = 10;
+const HEAVY_ATC_DAMAGE: u32 = 20;
 
 const QUICK_HIT_CHANCE: u128 = 80;
 const PRECISE_HIT_CHANCE: u128 = 60;
 const HEAVY_HIT_CHANCE: u128 = 35;
 
-const REST_RECOVERY: u8 = 5;
+const REST_RECOVERY: u32 = 5;
 
-const MAX_LEVEL: u8 = 9;
-const MAX_STRENGTH: u8 = 9;
-const MAX_AGILITY: u8 = 9;
-const MAX_VITALITY: u8 = 9;
-const MAX_STAMINA: u8 = 9;
+const MAX_LEVEL: u32 = 9;
+const MAX_STRENGTH: u32 = 9;
+const MAX_AGILITY: u32 = 9;
+const MAX_VITALITY: u32 = 9;
+const MAX_STAMINA: u32 = 9;
 
 #[starknet::interface]
 trait IActions<TContractState> {
@@ -62,7 +62,9 @@ trait IActions<TContractState> {
     fn register(self: @TContractState, arena_id: u32);
     fn play(self: @TContractState, arena_id: u32);
     fn level_up(self: @TContractState);
-    fn assign_points(self: @TContractState, strength: u8, agility: u8, vitality: u8, stamina: u8);
+    fn assign_points(
+        self: @TContractState, strength: u32, agility: u32, vitality: u32, stamina: u32
+    );
     fn update_strategy(self: @TContractState, strategy: ClassHash);
     fn battle(self: @TContractState, c1: ArenaCharacter, c2: ArenaCharacter) -> ArenaCharacter;
 }
@@ -297,6 +299,7 @@ mod actions {
             character_info.experience += get_gain_xp(character_info.level);
 
             winner.rating += get_gain_xp(character_info.level);
+            arena.total_rating += get_gain_xp(character_info.level);
             set!(world, (arena, character_info, winner));
         }
 
@@ -318,7 +321,7 @@ mod actions {
         }
 
         fn assign_points(
-            self: @ContractState, strength: u8, agility: u8, vitality: u8, stamina: u8
+            self: @ContractState, strength: u32, agility: u32, vitality: u32, stamina: u32
         ) {
             let world = self.world_dispatcher.read();
             let player = get_caller_address();
@@ -372,9 +375,9 @@ mod actions {
                 hp: c2.hp, position: SECOND_POS, energy: c2.energy, consecutive_rest_count: 0,
             };
 
-            let mut c1_initiative: u8 = 0;
-            let mut c2_initiative: u8 = 0;
-            let mut turns: u8 = 0;
+            let mut c1_initiative: u32 = 0;
+            let mut c2_initiative: u32 = 0;
+            let mut turns: u32 = 0;
 
             let mut winner = c1.clone();
             loop {
@@ -889,15 +892,21 @@ mod tests {
         assert(character_info.golds == 3500, 'golds is not correct');
     }
 
+    mod testing_strategies;
+    use testing_strategies::{Strategy};
+
     #[test]
     #[available_gas(3000000000000000)]
     fn test_play() {
         let player = starknet::contract_address_const::<0x0>();
+        let player2 = starknet::contract_address_const::<0x1>();
 
         let mut models = array![
             character_info::TEST_CLASS_HASH,
+            character_info::TEST_CLASS_HASH,
             counter::TEST_CLASS_HASH,
             arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
             arena_character::TEST_CLASS_HASH,
         ];
 
@@ -905,22 +914,67 @@ mod tests {
 
         let contract_address = world
             .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+
         let actions_system = IActionsDispatcher { contract_address };
 
-        actions_system
-            .createCharacter(
-                'c1',
-                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
-                starknet::class_hash_const::<0x123>()
-            );
+        let character_info_1 = CharacterInfo {
+            owner: player,
+            name: 'c1',
+            attributes: CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+            strategy: Strategy::TEST_CLASS_HASH.try_into().unwrap(),
+            level: 0,
+            experience: 0,
+            points: 0,
+            golds: 0,
+        };
+
+        let character_info_2 = CharacterInfo {
+            owner: player2,
+            name: 'c1',
+            attributes: CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+            strategy: Strategy::TEST_CLASS_HASH.try_into().unwrap(),
+            level: 0,
+            experience: 0,
+            points: 0,
+            golds: 0,
+        };
 
         actions_system.createArena('Sky Arena', SetTier::Tier5);
+        let mut arena = get!(world, 1, (Arena));
+        arena.character_count = 2;
+        set!(world, (arena, character_info_1, character_info_2));
 
-        let counter = get!(world, COUNTER_ID, (Counter));
+        let c1 = ArenaCharacter {
+            arena_id: 1,
+            character_count: 1,
+            name: 'c1',
+            hp: 30,
+            energy: 26,
+            position: 0,
+            attributes: CharacterAttributes { strength: 2, agility: 2, vitality: 3, stamina: 2, },
+            character_owner: player,
+            strategy: Strategy::TEST_CLASS_HASH.try_into().unwrap(),
+            rating: 30,
+        };
 
-        actions_system.register(counter.arena_count);
-    // actions_system.register(counter.arena_count);
+        let c2 = ArenaCharacter {
+            arena_id: 1,
+            character_count: 2,
+            name: 'c2',
+            hp: 30,
+            energy: 26,
+            position: 0,
+            attributes: CharacterAttributes { strength: 2, agility: 2, vitality: 3, stamina: 2, },
+            character_owner: player2,
+            strategy: Strategy::TEST_CLASS_HASH.try_into().unwrap(),
+            rating: 70,
+        };
 
-    // actions_system.play(counter.arena_count);
+        set!(world, (c1, c2));
+
+        actions_system.play(1);
+
+        let arena = get!(world, 1, (Arena));
+        arena.winner.print();
     }
 }

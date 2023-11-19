@@ -14,7 +14,7 @@ fn determin_action(my_state: CharacterState, opponent_state: CharacterState) -> 
     BattleAction::QuickAttack
 }
 
-fn calculate_initiative(action: BattleAction, agility: u8) -> u8 {
+fn calculate_initiative(action: BattleAction, agility: u32) -> u32 {
     let modifier = agility + agility * AGI_INITIATIVE_MODIFIER / 100;
     let mut result = 0;
     match action {
@@ -65,7 +65,7 @@ fn calculate_initiative(action: BattleAction, agility: u8) -> u8 {
     result
 }
 
-fn get_movement(agility: u8) -> u8 {
+fn get_movement(agility: u32) -> u32 {
     if agility >= 1 && agility <= 2 {
         1
     } else if agility >= 3 && agility <= 4 {
@@ -81,7 +81,7 @@ fn get_movement(agility: u8) -> u8 {
     }
 }
 
-fn get_gain_xp(level: u8) -> u32 {
+fn get_gain_xp(level: u32) -> u32 {
     if level == 0 {
         300
     } else if level == 1 {
@@ -107,7 +107,7 @@ fn get_gain_xp(level: u8) -> u32 {
     }
 }
 
-fn get_level_xp(level: u8) -> u32 {
+fn get_level_xp(level: u32) -> u32 {
     if level == 0 {
         300
     } else if level == 1 {
@@ -134,11 +134,11 @@ fn get_level_xp(level: u8) -> u32 {
 }
 
 fn new_pos_and_hit(
-    attacker_pos: u8, defender_pos: u8, attacker_agility: u8, chance: u128
-) -> (u8, bool) {
+    attacker_pos: u32, defender_pos: u32, attacker_agility: u32, chance: u128
+) -> (u32, bool) {
     let attacker_avaiable_move = get_movement(attacker_agility);
 
-    let mut new_attacker_pos: u8 = attacker_pos;
+    let mut new_attacker_pos: u32 = attacker_pos;
     let mut is_near: bool = false;
     if attacker_pos < defender_pos {
         if attacker_pos + attacker_avaiable_move >= defender_pos - 1 {
@@ -181,12 +181,12 @@ fn ratio(num: u128, deno: u128) -> bool {
 }
 
 fn new_pos_and_steps(
-    direction: Direction, attacker_pos: u8, defender_pos: u8, attacker_agility: u8
-) -> (u8, u8) {
+    direction: Direction, attacker_pos: u32, defender_pos: u32, attacker_agility: u32
+) -> (u32, u32) {
     let attacker_avaiable_move = get_movement(attacker_agility);
 
-    let mut new_pos: u8 = attacker_pos;
-    let mut steps: u8 = 0;
+    let mut new_pos: u32 = attacker_pos;
+    let mut steps: u32 = 0;
 
     match direction {
         Direction::Right => {
@@ -248,7 +248,7 @@ fn execute_action(
                 );
                 c1_state.position = new_pos;
                 if is_hit {
-                    let damage = *c1.attributes.strength * 2_u8 + QUICK_ATC_DAMAGE;
+                    let damage = *c1.attributes.strength * 2 + QUICK_ATC_DAMAGE;
                     if c2_state.hp > damage {
                         c2_state.hp -= damage;
                     } else {
@@ -282,7 +282,7 @@ fn execute_action(
                 );
                 c1_state.position = new_pos;
                 if is_hit {
-                    let damage = *c1.attributes.strength * 4_u8 + HEAVY_ATC_DAMAGE;
+                    let damage = *c1.attributes.strength * 4 + HEAVY_ATC_DAMAGE;
                     if c2_state.hp > damage {
                         c2_state.hp -= damage;
                     } else {

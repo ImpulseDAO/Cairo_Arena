@@ -10,9 +10,9 @@ struct CharacterInfo {
     name: felt252,
     attributes: CharacterAttributes,
     strategy: ClassHash,
-    level: u8,
+    level: u32,
     experience: u32,
-    points: u8,
+    points: u32,
     golds: u32,
 }
 
@@ -45,9 +45,9 @@ struct ArenaCharacter {
     #[key]
     character_count: u32,
     name: felt252,
-    hp: u8,
-    energy: u8,
-    position: u8,
+    hp: u32,
+    energy: u32,
+    position: u32,
     attributes: CharacterAttributes,
     character_owner: ContractAddress,
     strategy: ClassHash,
