@@ -58,6 +58,7 @@ trait IActions<TContractState> {
         self: @TContractState, name: felt252, attributes: InitialAttributes, strategy: ClassHash
     );
     fn createArena(self: @TContractState, name: felt252, current_tier: SetTier);
+    fn closeArena(self: @TContractState, arena_id: u32);
     fn register(self: @TContractState, arena_id: u32);
     fn play(self: @TContractState, arena_id: u32);
     fn level_up(self: @TContractState);
@@ -128,7 +129,14 @@ mod actions {
                 world,
                 (
                     CharacterInfo {
-                        owner, name, attributes, strategy, level: 0, experience: 0, points: 0
+                        owner,
+                        name,
+                        attributes,
+                        strategy,
+                        level: 0,
+                        experience: 0,
+                        points: 0,
+                        golds: 0,
                     },
                 )
             );
