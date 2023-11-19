@@ -384,8 +384,8 @@ mod actions {
                 if turns >= 25 {
                     if c1_state.hp <= c2_state.hp {
                         winner = c2;
-                        break;
                     }
+                    break;
                 }
                 turns += 1;
 
@@ -438,12 +438,13 @@ mod actions {
                         break;
                     }
                 } else {
-                    execute_action(c2_action, ref c2_state, ref c1_state, @c1, @c2);
+                    execute_action(c2_action, ref c2_state, ref c1_state, @c2, @c1);
+
                     if c1_state.hp == 0 {
                         winner = c2;
                         break;
                     }
-                    execute_action(c1_action, ref c1_state, ref c2_state, @c2, @c1);
+                    execute_action(c1_action, ref c1_state, ref c2_state, @c1, @c2);
                     if c2_state.hp == 0 {
                         break;
                     }
@@ -898,8 +899,8 @@ mod tests {
     #[test]
     #[available_gas(3000000000000000)]
     fn test_play() {
-        let player = starknet::contract_address_const::<0x0>();
-        let player2 = starknet::contract_address_const::<0x1>();
+        let player = starknet::contract_address_const::<0x1>();
+        let player2 = starknet::contract_address_const::<0x2>();
 
         let mut models = array![
             character_info::TEST_CLASS_HASH,
@@ -931,7 +932,7 @@ mod tests {
         let character_info_2 = CharacterInfo {
             owner: player2,
             name: 'c1',
-            attributes: CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+            attributes: CharacterAttributes { strength: 1, agility: 2, vitality: 1, stamina: 1 },
             strategy: Strategy::TEST_CLASS_HASH.try_into().unwrap(),
             level: 0,
             experience: 0,
@@ -964,7 +965,7 @@ mod tests {
             hp: 30,
             energy: 26,
             position: 0,
-            attributes: CharacterAttributes { strength: 2, agility: 2, vitality: 3, stamina: 2, },
+            attributes: CharacterAttributes { strength: 2, agility: 3, vitality: 2, stamina: 2, },
             character_owner: player2,
             strategy: Strategy::TEST_CLASS_HASH.try_into().unwrap(),
             rating: 70,
