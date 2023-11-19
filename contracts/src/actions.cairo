@@ -169,9 +169,23 @@ mod actions {
 
             arena.is_closed = true;
 
-            // TODO: Distribute rewards, who lose 5 tournaments doesn’t participate
+            let mut character_count = arena.character_count;
+            let mut i = 0;
+            loop {
+                i += 1;
+                let mut character = get!(world, (arena_id, i), ArenaCharacter);
+                let rewards = character.rating / arena.total_rating * arena.total_golds;
 
-            set!(world, (arena, counter));
+                let mut character_info = get!(world, character.character_owner, CharacterInfo);
+                character_info.golds += rewards;
+                set!(world, (character_info));
+
+                if i == character_count {
+                    break;
+                }
+            };
+
+            set!(world, (arena));
         }
 
         fn register(self: @ContractState, arena_id: u32) {

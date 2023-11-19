@@ -13,6 +13,7 @@ struct CharacterInfo {
     level: u8,
     experience: u32,
     points: u8,
+    golds: u32,
 }
 
 // models don't support Arrays yet, so we use a special counter model
