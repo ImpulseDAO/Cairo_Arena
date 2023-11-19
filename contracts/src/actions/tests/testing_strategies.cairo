@@ -23,7 +23,7 @@ mod Strategy {
             self: @ContractState, my_state: CharacterState, opponent_state: CharacterState
         ) -> BattleAction {
             // Your Strategy goes here
-            BattleAction::Rest
+            BattleAction::PreciseAttack
         }
     }
 }
