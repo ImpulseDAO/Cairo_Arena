@@ -13,6 +13,7 @@ struct CharacterInfo {
     level: u8,
     experience: u32,
     points: u8,
+    golds: u32,
 }
 
 // models don't support Arrays yet, so we use a special counter model
@@ -31,7 +32,10 @@ struct Arena {
     name: felt252,
     current_tier: SetTier,
     character_count: u32,
-    winner: ContractAddress
+    winner: ContractAddress,
+    total_golds: u32,
+    total_rating: u32,
+    is_closed: bool,
 }
 
 #[derive(Model, Drop, Serde, Clone)]
@@ -47,6 +51,7 @@ struct ArenaCharacter {
     attributes: CharacterAttributes,
     character_owner: ContractAddress,
     strategy: ClassHash,
+    rating: u32,
 }
 
 #[derive(Model, Drop, Serde)]

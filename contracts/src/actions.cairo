@@ -58,6 +58,7 @@ trait IActions<TContractState> {
         self: @TContractState, name: felt252, attributes: InitialAttributes, strategy: ClassHash
     );
     fn createArena(self: @TContractState, name: felt252, current_tier: SetTier);
+    fn closeArena(self: @TContractState, arena_id: u32);
     fn register(self: @TContractState, arena_id: u32);
     fn play(self: @TContractState, arena_id: u32);
     fn level_up(self: @TContractState);
@@ -128,7 +129,14 @@ mod actions {
                 world,
                 (
                     CharacterInfo {
-                        owner, name, attributes, strategy, level: 0, experience: 0, points: 0
+                        owner,
+                        name,
+                        attributes,
+                        strategy,
+                        level: 0,
+                        experience: 0,
+                        points: 0,
+                        golds: 0,
                     },
                 )
             );
@@ -148,9 +156,44 @@ mod actions {
                 current_tier,
                 character_count: 0,
                 winner: contract_address_const::<0>(),
+                total_golds: 5000,
+                total_rating: 0,
+                is_closed: false,
             };
 
             set!(world, (arena, counter));
+        }
+
+        fn closeArena(self: @ContractState, arena_id: u32) {
+            let world = self.world_dispatcher.read();
+            let owner = get_caller_address();
+
+            let mut counter = get!(world, COUNTER_ID, Counter);
+            assert(counter.arena_count >= arena_id && arena_id > 0, 'Arena does not exist');
+
+            let mut arena = get!(world, arena_id, Arena);
+            assert(arena.owner == owner, 'Only owner can close arena');
+            assert(!arena.is_closed, 'Arena is already closed');
+
+            arena.is_closed = true;
+
+            let mut character_count = arena.character_count;
+            let mut i = 0;
+            loop {
+                i += 1;
+                let mut character = get!(world, (arena_id, i), ArenaCharacter);
+                let rewards = character.rating * arena.total_golds / arena.total_rating;
+
+                let mut character_info = get!(world, character.character_owner, CharacterInfo);
+                character_info.golds += rewards;
+                set!(world, (character_info));
+
+                if i == character_count {
+                    break;
+                }
+            };
+
+            set!(world, (arena));
         }
 
         fn register(self: @ContractState, arena_id: u32) {
@@ -194,7 +237,8 @@ mod actions {
                 position: 0,
                 attributes: character_info.attributes,
                 character_owner: player,
-                strategy: character_info.strategy
+                strategy: character_info.strategy,
+                rating: 0,
             };
 
             set!(world, (arena, character, registered));
@@ -207,6 +251,7 @@ mod actions {
             assert(counter.arena_count >= arena_id && arena_id > 0, 'Arena does not exist');
 
             let mut arena = get!(world, arena_id, Arena);
+            assert(!arena.is_closed, 'Arena is closed');
             assert(
                 arena.character_count > 0 && arena.character_count % 2 == 0, 'Arena is not ready'
             );
@@ -243,14 +288,16 @@ mod actions {
                 character_count = winner_count;
             };
 
-            let winner = characters.pop_front().unwrap();
+            // winner is of ArenaCharacter
+            let mut winner = characters.pop_front().unwrap();
 
             arena.winner = winner.character_owner;
 
             let mut character_info = get!(world, winner.character_owner, CharacterInfo);
             character_info.experience += get_gain_xp(character_info.level);
 
-            set!(world, (arena, character_info));
+            winner.rating += get_gain_xp(character_info.level);
+            set!(world, (arena, character_info, winner));
         }
 
         fn level_up(self: @ContractState) {
@@ -420,7 +467,7 @@ mod tests {
     use dojo_arena::models::{character_info, counter, arena, arena_character};
     use dojo_arena::models::{CharacterInfo, Counter, Arena, ArenaCharacter};
 
-    use dojo_arena::models::io::{InitialAttributes, SetTier};
+    use dojo_arena::models::io::{InitialAttributes, SetTier, CharacterAttributes};
 
     // import actions
     use super::{
@@ -750,6 +797,96 @@ mod tests {
         assert(
             character.strategy == starknet::class_hash_const::<0x321>(), 'strategy is not correct'
         );
+    }
+
+    #[test]
+    #[available_gas(3000000000000000)]
+    fn test_close_arena() {
+        let player = starknet::contract_address_const::<0x0>();
+        let player2 = starknet::contract_address_const::<0x1>();
+
+        let mut models = array![
+            character_info::TEST_CLASS_HASH,
+            character_info::TEST_CLASS_HASH,
+            counter::TEST_CLASS_HASH,
+            arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+        ];
+
+        let world = spawn_test_world(models);
+
+        let contract_address = world
+            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+
+        let actions_system = IActionsDispatcher { contract_address };
+
+        actions_system
+            .createCharacter(
+                'c1',
+                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x123>()
+            );
+        actions_system
+            .createCharacter(
+                'c2',
+                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x321>()
+            );
+
+        actions_system.createArena('Sky Arena', SetTier::Tier5);
+
+        let mut arena = get!(world, 1, (Arena));
+        arena.character_count = 2;
+        arena.total_rating = 100;
+        set!(world, (arena));
+
+        let c1 = ArenaCharacter {
+            arena_id: 1,
+            character_count: 1,
+            name: 'c1',
+            hp: 30,
+            energy: 26,
+            position: 0,
+            attributes: CharacterAttributes { strength: 2, agility: 2, vitality: 3, stamina: 2, },
+            character_owner: player,
+            strategy: starknet::class_hash_const::<0x123>(),
+            rating: 30,
+        };
+
+        let c2 = ArenaCharacter {
+            arena_id: 1,
+            character_count: 2,
+            name: 'c2',
+            hp: 30,
+            energy: 26,
+            position: 0,
+            attributes: CharacterAttributes { strength: 2, agility: 2, vitality: 3, stamina: 2, },
+            character_owner: player2,
+            strategy: starknet::class_hash_const::<0x321>(),
+            rating: 70,
+        };
+
+        set!(world, (c1, c2));
+
+        actions_system.closeArena(1);
+
+        let arena = get!(world, 1, (Arena));
+        assert(arena.is_closed, 'arena is not closed');
+
+        let character = get!(world, (arena.id, 1), (ArenaCharacter));
+        assert(character.name == 'c1', 'name is not correct');
+        assert(character.character_owner == player, 'owner is not correct');
+
+        let character = get!(world, (arena.id, 2), (ArenaCharacter));
+        assert(character.name == 'c2', 'name is not correct');
+        assert(character.character_owner == player2, 'owner is not correct');
+
+        let character_info = get!(world, player, (CharacterInfo));
+        assert(character_info.golds == 1500, 'golds is not correct');
+
+        let character_info = get!(world, player2, (CharacterInfo));
+        assert(character_info.golds == 3500, 'golds is not correct');
     }
 
     #[test]
