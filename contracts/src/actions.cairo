@@ -66,7 +66,9 @@ trait IActions<TContractState> {
         self: @TContractState, strength: u32, agility: u32, vitality: u32, stamina: u32
     );
     fn update_strategy(self: @TContractState, strategy: ClassHash);
-    fn battle(self: @TContractState, c1: ArenaCharacter, c2: ArenaCharacter) -> ArenaCharacter;
+    fn battle(
+        self: @TContractState, c1: ArenaCharacter, c2: ArenaCharacter
+    ) -> (ArenaCharacter, Span<Span<u32>>);
 }
 
 #[starknet::interface]
@@ -86,8 +88,8 @@ mod actions {
         InitialAttributes, CharacterAttributes, SetTier, BattleAction, CharacterState, Direction
     };
     use dojo_arena::utils::{
-        determin_action, new_pos_and_hit, new_pos_and_steps, calculate_initiative, execute_action,
-        get_gain_xp, get_level_xp
+        new_pos_and_hit, new_pos_and_steps, calculate_initiative, execute_action, get_gain_xp,
+        get_level_xp, mirror_ation_to_int
     };
     use super::{
         IActions, HP_MULTIPLIER, BASE_HP, ENERGY_MULTIPLIER, BASE_ENERGY, COUNTER_ID, FIRST_POS,
@@ -101,6 +103,19 @@ mod actions {
     use super::{IStrategyDispatcherTrait, IStrategyLibraryDispatcher};
 
     use debug::PrintTrait;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        BattleLog: BattleLog,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct BattleLog {
+        #[key]
+        arena_id: u32,
+        logs: Span<Span<u32>>,
+    }
 
     // impl: implement functions specified in trait
     #[external(v0)]
@@ -280,7 +295,10 @@ mod actions {
                     }
                     let c1 = characters.pop_front().unwrap();
                     let c2 = characters.pop_front().unwrap();
-                    let winner = self.battle(c1, c2);
+                    let (winner, logs) = self.battle(c1, c2);
+
+                    emit!(world, BattleLog { arena_id: arena_id, logs: logs });
+
                     characters.append(winner);
                     winner_count += 1;
                 };
@@ -366,7 +384,11 @@ mod actions {
             set!(world, (character_info));
         }
 
-        fn battle(self: @ContractState, c1: ArenaCharacter, c2: ArenaCharacter) -> ArenaCharacter {
+        fn battle(
+            self: @ContractState, c1: ArenaCharacter, c2: ArenaCharacter
+        ) -> (ArenaCharacter, Span<Span<u32>>) {
+            let mut logs = ArrayTrait::new();
+
             let mut c1_state = CharacterState {
                 hp: c1.hp, position: FIRST_POS, energy: c1.energy, consecutive_rest_count: 0,
             };
@@ -427,6 +449,21 @@ mod actions {
                     }
                 }
 
+                let mut arr = array![
+                    turns,
+                    c1_state.hp,
+                    c2_state.hp,
+                    c1_state.position,
+                    c2_state.position,
+                    c1_state.energy,
+                    c2_state.energy,
+                    mirror_ation_to_int(c1_action),
+                    mirror_ation_to_int(c2_action),
+                    c1_initiative,
+                    c2_initiative
+                ];
+                logs.append(arr.span());
+
                 if is_c1_first {
                     execute_action(c1_action, ref c1_state, ref c2_state, @c1, @c2);
                     if c2_state.hp == 0 {
@@ -451,7 +488,22 @@ mod actions {
                 }
             };
 
-            winner
+            let mut arr = array![
+                turns + 1,
+                c1_state.hp,
+                c2_state.hp,
+                c1_state.position,
+                c2_state.position,
+                c1_state.energy,
+                c2_state.energy,
+                0,
+                0,
+                0,
+                0
+            ];
+            logs.append(arr.span());
+
+            (winner, logs.span())
         }
     }
 }
