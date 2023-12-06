@@ -9,11 +9,6 @@ use traits::{Into};
 use dojo_arena::models::{ArenaCharacter};
 
 
-fn determin_action(my_state: CharacterState, opponent_state: CharacterState) -> BattleAction {
-    //TODO: action logic
-    BattleAction::QuickAttack
-}
-
 fn calculate_initiative(action: BattleAction, agility: u32) -> u32 {
     let modifier = agility + agility * AGI_INITIATIVE_MODIFIER / 100;
     let mut result = 0;
@@ -317,4 +312,17 @@ fn execute_action(
             }
         },
     };
+}
+
+fn mirror_ation_to_int(action: BattleAction) -> u32 {
+    let i = match action {
+        BattleAction::QuickAttack => { 1 },
+        BattleAction::PreciseAttack => { 2 },
+        BattleAction::HeavyAttack => { 3 },
+        BattleAction::MoveRight => { 4 },
+        BattleAction::MoveLeft => { 5 },
+        BattleAction::Rest => { 6 },
+    };
+
+    i
 }
