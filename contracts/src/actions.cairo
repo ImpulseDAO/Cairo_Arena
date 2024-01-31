@@ -69,6 +69,8 @@ trait IActions<TContractState> {
     fn battle(
         ref self: TContractState, c1: ArenaCharacter, c2: ArenaCharacter
     ) -> (ArenaCharacter, Span<Span<u32>>);
+    // get the number of players
+    fn get_number_of_players(self: @TContractState, arena_id: u32) -> u32;
 }
 
 #[starknet::interface]
@@ -507,6 +509,15 @@ mod actions {
             logs.append(arr.span());
 
             (winner, logs.span())
+        }
+
+        fn get_number_of_players(self: @ContractState, arena_id: u32) -> u32 {
+            let world = self.world_dispatcher.read();
+            let mut counter = get!(world, COUNTER_ID, Counter);
+            assert(counter.arena_count >= arena_id && arena_id > 0, 'Arena does not exist');
+
+            let arena = get!(world, arena_id, Arena);
+            arena.character_count
         }
     }
 }
@@ -1032,5 +1043,38 @@ mod tests {
 
         let arena = get!(world, 1, (Arena));
         arena.winner.print();
+    }
+
+    #[test]
+    #[available_gas(3000000000000000)]
+    fn test_get_number_of_players() {
+        let player = starknet::contract_address_const::<0x0>();
+
+        let mut models = array![
+            character_info::TEST_CLASS_HASH,
+            counter::TEST_CLASS_HASH,
+            arena::TEST_CLASS_HASH,
+            arena_character::TEST_CLASS_HASH,
+        ];
+
+        let world = spawn_test_world(models);
+
+        let contract_address = world
+            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
+        let actions_system = IActionsDispatcher { contract_address };
+
+        actions_system
+            .createCharacter(
+                'asten',
+                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x123>()
+            );
+        actions_system.createArena('Sky Arena', SetTier::Tier5);
+
+        actions_system.register(1);
+
+        let counter = get!(world, COUNTER_ID, (Counter));
+        let arena = get!(world, counter.arena_count, (Arena));
+        assert(actions_system.get_number_of_players(arena.id) == 1, 'Number is not correct');
     }
 }
