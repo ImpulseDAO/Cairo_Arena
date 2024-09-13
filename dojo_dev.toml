@@ -1,0 +1,18 @@
+[world]
+name = "Cairo Arena"
+seed = "test"
+
+[world.socials]
+x = "https://x.com/WarpackMasters"
+discord = "https://discord.gg/tjJJHc7JtP"
+github = "https://github.com/ImpulseDAO/Cairo_Arena"
+telegram = ""
+
+[namespace]
+default = "Arena"
+
+[env]
+rpc_url = ""
+# Default account for katana with seed = 0
+account_address = ""
+private_key = ""
