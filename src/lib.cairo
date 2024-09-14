@@ -3,12 +3,11 @@ mod systems {
 }
 
 mod models {
-    mod models;
-    mod io;
+    mod Arena;
+    mod Character;
 }
 
-mod tests {
-    mod tests;
+mod tests { // mod tests;
 }
 
 

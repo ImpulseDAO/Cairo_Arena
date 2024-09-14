@@ -1,7 +1,14 @@
+use dojo_arena::models::Arena::{CharacterState, BattleAction, ArenaCharacter, SetTier};
+use dojo_arena::models::Character::{InitialAttributes};
+use starknet::ClassHash;
+
 #[dojo::interface]
 trait IActions {
     fn createCharacter(
-        ref self: TContractState, name: felt252, attributes: InitialAttributes, strategy: ClassHash
+        ref world: IWorldDispatcher,
+        name: felt252,
+        attributes: InitialAttributes,
+        strategy: ClassHash
     );
     fn createArena(ref world: IWorldDispatcher, name: felt252, current_tier: SetTier);
     fn closeArena(ref world: IWorldDispatcher, arena_id: u32);
@@ -12,9 +19,7 @@ trait IActions {
         ref world: IWorldDispatcher, strength: u32, agility: u32, vitality: u32, stamina: u32
     );
     fn update_strategy(ref world: IWorldDispatcher, strategy: ClassHash);
-    fn battle(
-        ref world: IWorldDispatcher, c1: ArenaCharacter, c2: ArenaCharacter
-    ) -> (ArenaCharacter, Span<Span<u32>>);
+    fn battle(c1: ArenaCharacter, c2: ArenaCharacter) -> (ArenaCharacter, Span<Span<u32>>);
     fn get_number_of_players(ref world: IWorldDispatcher, arena_id: u32) -> u32;
 }
 
@@ -33,15 +38,10 @@ mod actions {
     use starknet::{ContractAddress, get_caller_address, ClassHash};
     use starknet::{contract_address_const, class_hash_const};
 
-    use dojo_arena::models::io::{
-        InitialAttributes, CharacterAttributes, SetTier, CharacterState, BattleAction
+    use dojo_arena::models::Arena::{
+        Arena, ArenaCounter, ArenaCharacter, ArenaRegistered, SetTier, CharacterState, BattleAction
     };
-    use dojo_arena::models::models::{
-        CharacterInfo, Arena, Counter, ArenaCharacter, ArenaRegistered
-    };
-    use dojo_arena::models::io::{
-        InitialAttributes, CharacterAttributes, SetTier, BattleAction, CharacterState, Direction
-    };
+    use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes, InitialAttributes};
 
     use dojo_arena::constants::{
         HP_MULTIPLIER, BASE_HP, ENERGY_MULTIPLIER, BASE_ENERGY, COUNTER_ID, FIRST_POS, SECOND_POS,
@@ -76,7 +76,9 @@ mod actions {
             attributes: InitialAttributes,
             strategy: ClassHash
         ) {
-            let world = self.world_dispatcher.read();
+            let player = get_caller_address();
+
+            assert(name != '', 'name cannot be empty');
 
             assert(
                 attributes.strength
@@ -93,13 +95,11 @@ mod actions {
                 stamina: 1 + attributes.stamina,
             };
 
-            let owner = get_caller_address();
-
             set!(
                 world,
                 (
                     CharacterInfo {
-                        owner,
+                        player,
                         name,
                         attributes,
                         strategy,
@@ -113,15 +113,14 @@ mod actions {
         }
 
         fn createArena(ref world: IWorldDispatcher, name: felt252, current_tier: SetTier) {
-            let world = self.world_dispatcher.read();
-            let owner = get_caller_address();
+            let player = get_caller_address();
 
-            let mut counter = get!(world, COUNTER_ID, Counter);
+            let mut counter = get!(world, COUNTER_ID, ArenaCounter);
             counter.arena_count += 1;
 
             let arena = Arena {
                 id: counter.arena_count,
-                owner,
+                player,
                 name,
                 current_tier,
                 character_count: 0,
@@ -135,14 +134,13 @@ mod actions {
         }
 
         fn closeArena(ref world: IWorldDispatcher, arena_id: u32) {
-            let world = self.world_dispatcher.read();
-            let owner = get_caller_address();
+            let player = get_caller_address();
 
-            let mut counter = get!(world, COUNTER_ID, Counter);
-            assert(counter.arena_count >= arena_id && arena_id > 0, 'Arena does not exist');
+            let mut counter = get!(world, COUNTER_ID, ArenaCounter);
+            assert(arena_id > 0 && arena_id <= counter.arena_count, 'Arena does not exist');
 
             let mut arena = get!(world, arena_id, Arena);
-            assert(arena.owner == owner, 'Only owner can close arena');
+            assert(arena.player == player, 'Only arena creator can close');
             assert(!arena.is_closed, 'Arena is already closed');
 
             arena.is_closed = true;
@@ -167,11 +165,10 @@ mod actions {
         }
 
         fn register(ref world: IWorldDispatcher, arena_id: u32) {
-            let world = self.world_dispatcher.read();
             let player = get_caller_address();
 
-            let mut counter = get!(world, COUNTER_ID, Counter);
-            assert(counter.arena_count >= arena_id && arena_id > 0, 'Arena does not exist');
+            let counter = get!(world, COUNTER_ID, ArenaCounter);
+            assert(arena_id > 0 && arena_id <= counter.arena_count, 'Arena does not exist');
 
             let mut arena = get!(world, arena_id, (Arena));
             arena.character_count += 1;
@@ -215,10 +212,8 @@ mod actions {
         }
 
         fn play(ref world: IWorldDispatcher, arena_id: u32) {
-            let world = self.world_dispatcher.read();
-
-            let mut counter = get!(world, COUNTER_ID, Counter);
-            assert(counter.arena_count >= arena_id && arena_id > 0, 'Arena does not exist');
+            let mut counter = get!(world, COUNTER_ID, ArenaCounter);
+            assert(arena_id > 0 && arena_id <= counter.arena_count, 'Arena does not exist');
 
             let mut arena = get!(world, arena_id, Arena);
             assert(!arena.is_closed, 'Arena is closed');
@@ -275,7 +270,6 @@ mod actions {
         }
 
         fn level_up(ref world: IWorldDispatcher) {
-            let world = self.world_dispatcher.read();
             let player = get_caller_address();
 
             let mut character_info = get!(world, player, CharacterInfo);
@@ -294,7 +288,6 @@ mod actions {
         fn assign_points(
             ref world: IWorldDispatcher, strength: u32, agility: u32, vitality: u32, stamina: u32
         ) {
-            let world = self.world_dispatcher.read();
             let player = get_caller_address();
 
             let mut character_info = get!(world, player, CharacterInfo);
@@ -326,7 +319,6 @@ mod actions {
         }
 
         fn update_strategy(ref world: IWorldDispatcher, strategy: ClassHash) {
-            let world = self.world_dispatcher.read();
             let player = get_caller_address();
 
             // TODO: Consume XP / Experience Points to enable updates
@@ -337,9 +329,7 @@ mod actions {
             set!(world, (character_info));
         }
 
-        fn battle(
-            ref world: IWorldDispatcher, c1: ArenaCharacter, c2: ArenaCharacter
-        ) -> (ArenaCharacter, Span<Span<u32>>) {
+        fn battle(c1: ArenaCharacter, c2: ArenaCharacter) -> (ArenaCharacter, Span<Span<u32>>) {
             let mut logs = ArrayTrait::new();
 
             let mut c1_state = CharacterState {
@@ -461,7 +451,7 @@ mod actions {
 
         fn get_number_of_players(ref world: IWorldDispatcher, arena_id: u32) -> u32 {
             let world = self.world_dispatcher.read();
-            let mut counter = get!(world, COUNTER_ID, Counter);
+            let mut counter = get!(world, COUNTER_ID, ArenaCounter);
             assert(counter.arena_count >= arena_id && arena_id > 0, 'Arena does not exist');
 
             let arena = get!(world, arena_id, Arena);

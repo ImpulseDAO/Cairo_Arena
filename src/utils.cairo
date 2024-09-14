@@ -1,12 +1,11 @@
-use dojo_arena::models::io::{CharacterState, BattleAction, Direction};
-use dojo_arena::actions::{
+use dojo_arena::models::Arena::{CharacterState, BattleAction, Direction, ArenaCharacter};
+use dojo_arena::constants::{
     AGI_INITIATIVE_MODIFIER, QUICK_ATC_INI, PRECISE_ATC_INI, HEAVY_ATC_INI, MOVE_INI, REST_INI,
     RANGE_POS, QUICK_HIT_CHANCE, PRECISE_HIT_CHANCE, HEAVY_HIT_CHANCE, REST_RECOVERY,
     QUICK_ATC_DAMAGE, PRECISE_ATC_DAMAGE, HEAVY_ATC_DAMAGE, QUICK_ATC_ENERGY, PRECISE_ATC_ENERGY,
     HEAVY_ATC_ENERGY
 };
 use traits::{Into};
-use dojo_arena::models::{ArenaCharacter};
 
 
 fn calculate_initiative(action: BattleAction, agility: u32) -> u32 {
