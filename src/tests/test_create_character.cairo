@@ -45,4 +45,19 @@ mod tests {
         assert(character.attributes.vitality == 3, 'vitality is not correct');
         assert(character.attributes.stamina == 2, 'stamina is not correct');
     }
+
+    #[test]
+    #[should_panic(expected: ('Attributes must sum 5', 'ENTRYPOINT_FAILED'))]
+    #[available_gas(3000000000000000)]
+    fn test_create_character_wrong_init_attributes() {
+        let world = spawn_test_world!();
+        let (_, mut actions_system,) = get_systems(world);
+
+        actions_system
+            .createCharacter(
+                'asten',
+                InitialAttributes { strength: 2, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x123>()
+            );
+    }
 }
