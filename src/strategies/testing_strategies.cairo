@@ -1,4 +1,4 @@
-use dojo_arena::models::io::{CharacterState, BattleAction};
+use dojo_arena::models::Arena::{CharacterState, BattleAction};
 
 #[starknet::interface]
 trait IStrategy<TContractState> {
@@ -17,7 +17,7 @@ mod Strategy {
     #[storage]
     struct Storage {}
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl Strategy of super::IStrategy<ContractState> {
         fn determin_action(
             self: @ContractState, my_state: CharacterState, opponent_state: CharacterState
