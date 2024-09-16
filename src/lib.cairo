@@ -7,7 +7,8 @@ mod models {
     mod Character;
 }
 
-mod tests { // mod tests;
+mod tests {
+    mod test_create_character;
 }
 
 

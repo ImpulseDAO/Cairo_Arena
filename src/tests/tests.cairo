@@ -23,40 +23,6 @@ mod tests {
     use debug::PrintTrait;
 
     #[test]
-    #[available_gas(3000000000000000)]
-    fn test_create_character() {
-        let player = starknet::contract_address_const::<0x0>();
-
-        let mut models = array![
-            character_info::TEST_CLASS_HASH,
-            counter::TEST_CLASS_HASH,
-            arena::TEST_CLASS_HASH,
-            arena_character::TEST_CLASS_HASH,
-        ];
-
-        let world = spawn_test_world(models);
-
-        let contract_address = world
-            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
-        let actions_system = IActionsDispatcher { contract_address };
-
-        actions_system
-            .createCharacter(
-                'asten',
-                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
-                starknet::class_hash_const::<0x123>()
-            );
-
-        let character = get!(world, player, (CharacterInfo));
-
-        assert(character.name == 'asten', 'name is not correct');
-        assert(character.attributes.strength == 2, 'strength is not correct');
-        assert(character.attributes.agility == 2, 'agility is not correct');
-        assert(character.attributes.vitality == 3, 'vitality is not correct');
-        assert(character.attributes.stamina == 2, 'stamina is not correct');
-    }
-
-    #[test]
     #[should_panic]
     #[available_gas(3000000000000000)]
     fn test_create_character_wrong_init_attributes() {
