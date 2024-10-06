@@ -24,6 +24,8 @@ enum BattleAction {
     HeavyAttack,
     MoveRight,
     MoveLeft,
+    MoveUp,
+    MoveDown,
     Rest,
 }
 
