@@ -1,3 +1,5 @@
+use dojo_arena::models::Arena::Position;
+
 const HP_MULTIPLIER: u32 = 10;
 const BASE_HP: u32 = 90;
 
@@ -46,3 +48,15 @@ const MAX_STAMINA: u32 = 9;
 
 const GRID_WIDTH: u32 = 7;
 const GRID_HEIGHT: u32 = 4;
+
+// left side
+const RED: felt252 = "red";
+// right side
+const BLUE: felt252 = "blue";
+
+const FIRST_POS = Position { x: 0, y: 1 };
+const SECOND_POS = Position { x: 0, y: 3 };
+const THIRD_POS = Position { x: 0, y: 5 };
+const FOURTH_POS = Position { x: 3, y: 1 };
+const FIFTH_POS = Position { x: 3, y: 3 };
+const SIXTH_POS = Position { x: 3, y: 5 };

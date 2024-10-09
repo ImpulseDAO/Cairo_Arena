@@ -11,7 +11,7 @@ trait IFight {
 #[starknet::interface]
 trait IStrategy<TContractState> {
     fn determin_action(
-        self: @TContractState, my_state: CharacterState, opponent_state: CharacterState
+        self: @TContractState, characters: Span<ArenaCharacter>, ownid: u32,
     ) -> BattleAction;
 }
 
@@ -55,22 +55,60 @@ mod fight_system {
 
             let mut arena = get!(world, arena_id, Arena);
             assert(!arena.is_closed, 'Arena is closed');
-            assert(
-                arena.character_count > 0 && arena.character_count % 2 == 0, 'Arena is not ready'
-            );
+            let character_count = arena.character_count;
+            assert(character_count == 6, 'Arena is not ready');
+
+            let mut winner: felt252 = 0;
 
             let mut characters = ArrayTrait::new();
             let mut i: usize = 0;
             loop {
                 i += 1;
-                if i > arena.character_count {
+                if i > character_count {
                     break;
                 }
                 let c = get!(world, (arena_id, i), ArenaCharacter);
                 characters.append(c);
             };
 
-            let mut character_count = arena.character_count;
+            let mut sequence: Felt252Dict<u32> = Default::default();
+            for c in characters {
+                let cid = c.character_count;
+                c.action = IStrategyLibraryDispatcher {
+                    class_hash: c.strategy
+                }.determin_action();
+                c.initiative = calculate_initiative(action, c.attributes.agility);
+                sequence.insert(cid.into(), cid);
+            }
+
+            let mut active_character = characters.at(0);
+            // bubble to sort characters by initiative
+            let mut i: usize = 0;
+            loop {
+                i += 1;
+                if i > character_count{
+                    break;
+                }
+                let mut j: usize = 0;
+                loop {
+                    j += 1;
+                    if j > character_count - i {
+                        break;
+                    }
+                    if characters.at(sequence.get(j.into()) - 1).initiative > characters.at(sequence.get((j+1).into()) - 1).initiative {
+                        let temp = sequence.get(j.into());
+                        sequence.insert(j.into(), sequence.get((j+1).into()));
+                        sequence.insert((j+1).into(), temp);
+                    }
+                };
+            };
+
+            for sid in 1..character_count+1 {
+                let cid = sequence.get(sid.into());
+                let mut c = characters.at(cid - 1);
+                execute_action();
+            };
+            
             loop {
                 i = 0;
                 let mut winner_count = 0;

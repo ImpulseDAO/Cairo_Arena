@@ -1,5 +1,6 @@
 mod systems {
     mod actions;
+    mod fight;
 }
 
 mod models {

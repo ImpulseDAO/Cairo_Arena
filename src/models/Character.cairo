@@ -21,5 +21,4 @@ struct CharacterInfo {
     experience: u32,
     points: u32,
     golds: u32,
-    idle: bool,
 }

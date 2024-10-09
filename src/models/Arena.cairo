@@ -56,10 +56,22 @@ struct Arena {
     name: felt252,
     current_tier: SetTier,
     character_count: u32,
-    winner: ContractAddress,
-    total_golds: u32,
-    total_rating: u32,
+    winner: felt252,
     is_closed: bool,
+}
+
+#[derive(Copy, Drop, Serde, Introspect)]
+struct Position {
+    x: usize,
+    y: usize
+}
+
+#[derive(Copy, Drop, Serde, Introspect)]
+struct Direction {
+    up,
+    down,
+    right,
+    left,
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -70,12 +82,16 @@ struct ArenaCharacter {
     #[key]
     character_count: u32,
     name: felt252,
+    level: u32,
     hp: u32,
     energy: u32,
     attributes: CharacterAttributes,
     character_owner: ContractAddress,
     strategy: ClassHash,
-    rating: u32,
+    position: Position,
+    direction: Direction,
+    action: BattleAction,
+    initiative: u32,
 }
 
 #[derive(Drop, Serde)]

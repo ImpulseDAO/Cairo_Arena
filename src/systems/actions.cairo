@@ -35,17 +35,14 @@ mod actions {
     use starknet::{contract_address_const, class_hash_const};
 
     use dojo_arena::models::Arena::{
-        Arena, ArenaCounter, ArenaCharacter, ArenaRegistered, SetTier, CharacterState, BattleAction
+        Arena, ArenaCounter, ArenaCharacter, ArenaRegistered, SetTier, CharacterState, BattleAction, Position, Direction
     };
     use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes};
 
     use dojo_arena::constants::{
         HP_MULTIPLIER, BASE_HP, ENERGY_MULTIPLIER, BASE_ENERGY, COUNTER_ID, FIRST_POS, SECOND_POS,
-        RANGE_POS, MAX_TURNS, QUICK_ATC_ENERGY, PRECISE_ATC_ENERGY, HEAVY_ATC_ENERGY,
-        QUICK_ATC_DAMAGE, PRECISE_ATC_DAMAGE, HEAVY_ATC_DAMAGE, AGI_INITIATIVE_MODIFIER,
-        QUICK_ATC_INI, PRECISE_ATC_INI, HEAVY_ATC_INI, MOVE_INI, REST_INI, QUICK_HIT_CHANCE,
-        PRECISE_HIT_CHANCE, HEAVY_HIT_CHANCE, REST_RECOVERY, MAX_LEVEL, MAX_STRENGTH, MAX_AGILITY,
-        MAX_VITALITY, MAX_STAMINA
+        MAX_TURNS, MAX_LEVEL, MAX_STRENGTH, MAX_AGILITY, MAX_VITALITY, MAX_STAMINA,
+        FIRST_POS, SECOND_POS, THIRD_POS, FOURTH_POS, FIFTH_POS, SIXTH_POS
     };
 
     use dojo_arena::utils::{
@@ -92,7 +89,6 @@ mod actions {
                         experience: 0,
                         points: 0,
                         golds: 0,
-                        idle: true,
                     },
                 )
             );
@@ -110,7 +106,7 @@ mod actions {
                 name,
                 current_tier,
                 character_count: 0,
-                winner: contract_address_const::<0>(),
+                winner: 0,
                 is_closed: false,
             };
 
@@ -130,7 +126,6 @@ mod actions {
 
             let character_info = get!(world, player, CharacterInfo);
             assert(character_info.name != '', 'Character does not exist');
-            assert(character_info.idle, 'Character is not idle');
 
             let mut registered = get!(world, (arena_id, player), ArenaRegistered);
             assert(!registered.registered, 'Character already registered');
@@ -151,15 +146,38 @@ mod actions {
             let hp = character_info.attributes.vitality * HP_MULTIPLIER + BASE_HP;
             let energy = character_info.attributes.stamina * ENERGY_MULTIPLIER + BASE_ENERGY;
 
+            let position = match arena.character_count {
+                0 => assert(false, 'Invalid character count'),
+                1 => FIRST_POS,
+                2 => SECOND_POS,
+                3 => THIRD_POS,
+                4 => FOURTH_POS,
+                5 => FIFTH_POS,
+                6 => SIXTH_POS,
+                _ => assert(false, 'Invalid character count'),
+            };
+
+            let direction = match arena.character_count {
+                0 => assert(false, 'Invalid character count'),
+                1 | 2 | 3 => Direction::right,
+                4 | 5 | 6 => Direction::left,
+                _ => assert(false, 'Invalid character count'),
+            }
+
             let character = ArenaCharacter {
                 arena_id: arena.id,
                 character_count: arena.character_count,
                 name: character_info.name,
+                level: character_info.level,
                 hp,
                 energy,
                 attributes: character_info.attributes,
                 character_owner: player,
                 strategy: character_info.strategy,
+                position,
+                direction,
+                action: BattleAction::Rest,
+                initiative: 0,
             };
 
             set!(world, (arena, character, registered));
