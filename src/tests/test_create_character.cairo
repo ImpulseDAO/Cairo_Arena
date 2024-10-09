@@ -11,7 +11,7 @@ mod tests {
     use dojo::utils::test::{spawn_test_world, deploy_contract};
 
     use dojo_arena::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
-    use dojo_arena::models::Character::{CharacterInfo, InitialAttributes};
+    use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes};
 
     fn get_systems(world: IWorldDispatcher) -> (ContractAddress, IActionsDispatcher,) {
         let actions_address = world
@@ -32,7 +32,7 @@ mod tests {
         actions_system
             .createCharacter(
                 'asten',
-                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
                 starknet::class_hash_const::<0x123>()
             );
 
@@ -56,7 +56,7 @@ mod tests {
         actions_system
             .createCharacter(
                 'asten',
-                InitialAttributes { strength: 2, agility: 1, vitality: 2, stamina: 1 },
+                CharacterAttributes { strength: 2, agility: 1, vitality: 2, stamina: 1 },
                 starknet::class_hash_const::<0x123>()
             );
     }

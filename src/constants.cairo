@@ -43,3 +43,6 @@ const MAX_STRENGTH: u32 = 9;
 const MAX_AGILITY: u32 = 9;
 const MAX_VITALITY: u32 = 9;
 const MAX_STAMINA: u32 = 9;
+
+const GRID_WIDTH: u32 = 7;
+const GRID_HEIGHT: u32 = 4;

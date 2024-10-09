@@ -2,14 +2,6 @@ use starknet::ContractAddress;
 use starknet::ClassHash;
 
 #[derive(Serde, Copy, Drop, Introspect)]
-struct InitialAttributes {
-    strength: u32,
-    agility: u32,
-    vitality: u32,
-    stamina: u32,
-}
-
-#[derive(Serde, Copy, Drop, Introspect)]
 struct CharacterAttributes {
     strength: u32,
     agility: u32,
@@ -29,4 +21,5 @@ struct CharacterInfo {
     experience: u32,
     points: u32,
     golds: u32,
+    idle: bool,
 }

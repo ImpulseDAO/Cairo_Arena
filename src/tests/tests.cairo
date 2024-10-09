@@ -12,7 +12,7 @@ mod tests {
     use dojo_arena::models::{character_info, counter, arena, arena_character};
     use dojo_arena::models::{CharacterInfo, Counter, Arena, ArenaCharacter};
 
-    use dojo_arena::models::io::{InitialAttributes, SetTier, CharacterAttributes};
+    use dojo_arena::models::io::{SetTier, CharacterAttributes};
 
     // import actions
     use super::{
@@ -44,7 +44,7 @@ mod tests {
         actions_system
             .createCharacter(
                 'c1',
-                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
                 starknet::class_hash_const::<0x123>()
             );
         let character = get!(world, player, (CharacterInfo));
@@ -84,13 +84,13 @@ mod tests {
         actions_system
             .createCharacter(
                 'c1',
-                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
                 starknet::class_hash_const::<0x123>()
             );
         actions_system
             .createCharacter(
                 'c2',
-                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
                 starknet::class_hash_const::<0x321>()
             );
 
@@ -174,7 +174,7 @@ mod tests {
         actions_system
             .createCharacter(
                 'asten',
-                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
                 starknet::class_hash_const::<0x123>()
             );
         actions_system.createArena('Sky Arena', SetTier::Tier5);

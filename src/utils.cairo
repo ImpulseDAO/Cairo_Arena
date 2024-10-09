@@ -33,14 +33,7 @@ fn calculate_initiative(action: BattleAction, agility: u32) -> u32 {
                 result = 0;
             }
         },
-        BattleAction::MoveRight => {
-            if MOVE_INI > modifier {
-                result = MOVE_INI - modifier;
-            } else {
-                result = 0;
-            }
-        },
-        BattleAction::MoveLeft => {
+        BattleAction::MoveRight | BattleAction::MoveLeft | BattleAction::MoveUp | BattleAction::MoveDown => {
             if MOVE_INI > modifier {
                 result = MOVE_INI - modifier;
             } else {
@@ -303,6 +296,8 @@ fn execute_action(
                 c1_state.position = new_pos;
             }
         },
+        BattleAction::MoveUp => {},
+        BattleAction::MoveDown => {},
         BattleAction::Rest => {
             let rest_penalty = c1_state.consecutive_rest_count
                 * (c1_state.consecutive_rest_count - 1);
@@ -320,7 +315,9 @@ fn mirror_ation_to_int(action: BattleAction) -> u32 {
         BattleAction::HeavyAttack => { 3 },
         BattleAction::MoveRight => { 4 },
         BattleAction::MoveLeft => { 5 },
-        BattleAction::Rest => { 6 },
+        BattleAction::MoveUp => { 6 },
+        BattleAction::MoveDown => { 7 },
+        BattleAction::Rest => { 8 },
     };
 
     i

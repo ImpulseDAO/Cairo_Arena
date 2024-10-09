@@ -72,7 +72,6 @@ struct ArenaCharacter {
     name: felt252,
     hp: u32,
     energy: u32,
-    position: u32,
     attributes: CharacterAttributes,
     character_owner: ContractAddress,
     strategy: ClassHash,

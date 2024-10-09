@@ -11,7 +11,7 @@ mod tests {
     use dojo::utils::test::{spawn_test_world, deploy_contract};
 
     use dojo_arena::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
-    use dojo_arena::models::Character::{CharacterInfo, InitialAttributes, CharacterAttributes};
+    use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes};
     use dojo_arena::models::Arena::{Arena, ArenaCounter, SetTier, ArenaCharacter, ArenaRegistered};
 
     use dojo_arena::strategies::testing_strategies::Strategy;
@@ -44,7 +44,7 @@ mod tests {
         actions_system
             .createCharacter(
                 'asten',
-                InitialAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
                 starknet::class_hash_const::<0x123>()
             );
         actions_system.createArena('Sky Arena', SetTier::Tier5);
@@ -103,7 +103,6 @@ mod tests {
             attributes: CharacterAttributes { strength: 2, agility: 2, vitality: 3, stamina: 2, },
             character_owner: player,
             strategy: Strategy::TEST_CLASS_HASH.try_into().unwrap(),
-            rating: 30,
         };
 
         let c2 = ArenaCharacter {
@@ -116,7 +115,6 @@ mod tests {
             attributes: CharacterAttributes { strength: 2, agility: 3, vitality: 2, stamina: 2, },
             character_owner: player2,
             strategy: Strategy::TEST_CLASS_HASH.try_into().unwrap(),
-            rating: 70,
         };
 
         set!(world, (c1, c2));
