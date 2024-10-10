@@ -3,10 +3,10 @@ use starknet::ClassHash;
 
 #[derive(Serde, Copy, Drop, Introspect)]
 struct CharacterAttributes {
-    strength: u32,
-    agility: u32,
-    vitality: u32,
-    stamina: u32,
+    strength: u8,
+    agility: u8,
+    vitality: u8,
+    stamina: u8,
 }
 
 #[derive(Drop, Serde)]
@@ -17,7 +17,7 @@ struct CharacterInfo {
     name: felt252,
     attributes: CharacterAttributes,
     strategy: ClassHash,
-    level: u32,
+    level: u8,
     experience: u32,
     points: u32,
     golds: u32,

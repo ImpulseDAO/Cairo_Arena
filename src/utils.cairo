@@ -1,14 +1,14 @@
 use dojo_arena::models::Arena::{BattleAction, Direction, ArenaCharacter};
 use dojo_arena::constants::{
     AGI_INITIATIVE_MODIFIER, QUICK_ATC_INI, PRECISE_ATC_INI, HEAVY_ATC_INI, MOVE_INI, REST_INI,
-    RANGE_POS, QUICK_HIT_CHANCE, PRECISE_HIT_CHANCE, HEAVY_HIT_CHANCE, REST_RECOVERY,
+    QUICK_HIT_CHANCE, PRECISE_HIT_CHANCE, HEAVY_HIT_CHANCE, REST_RECOVERY,
     QUICK_ATC_DAMAGE, PRECISE_ATC_DAMAGE, HEAVY_ATC_DAMAGE, QUICK_ATC_ENERGY, PRECISE_ATC_ENERGY,
     HEAVY_ATC_ENERGY, GRID_WIDTH, GRID_HEIGHT
 };
 use traits::{Into};
 
 
-fn calculate_initiative(action: BattleAction, agility: u32) -> u32 {
+fn calculate_initiative(action: BattleAction, agility: u8) -> u8 {
     let modifier = agility + agility * AGI_INITIATIVE_MODIFIER / 100;
     let mut result = 0;
     match action {
@@ -106,12 +106,12 @@ fn get_level_xp(level: u32) -> u32 {
     }
 }
 
-fn ratio(num: u128, deno: u128) -> bool {
+fn ratio(num: u8, deno: u8) -> bool {
     let tx = starknet::get_tx_info().unbox().transaction_hash;
     let seed: u256 = tx.into();
 
-    let result = seed.low % deno + 1;
-    if result <= num {
+    let result = seed.low % deno.into() + 1;
+    if result <= num.into() {
         true
     } else {
         false

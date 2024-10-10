@@ -28,13 +28,13 @@ mod actions {
     use starknet::{contract_address_const, class_hash_const};
 
     use dojo_arena::models::Arena::{
-        Arena, ArenaCounter, ArenaCharacter, ArenaRegistered, SetTier, BattleAction, Position, Direction
+        Arena, ArenaCounter, ArenaCharacter, ArenaRegistered, SetTier, BattleAction, Position, Direction, Side
     };
     use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes};
 
     use dojo_arena::constants::{
         HP_MULTIPLIER, BASE_HP, ENERGY_MULTIPLIER, BASE_ENERGY, COUNTER_ID, FIRST_POS, SECOND_POS,
-        MAX_TURNS, MAX_LEVEL, MAX_STRENGTH, MAX_AGILITY, MAX_VITALITY, MAX_STAMINA,
+        MAX_LEVEL, MAX_STRENGTH, MAX_AGILITY, MAX_VITALITY, MAX_STAMINA,
         FIRST_POS, SECOND_POS, THIRD_POS, FOURTH_POS, FIFTH_POS, SIXTH_POS
     };
 
@@ -150,10 +150,10 @@ mod actions {
                 _ => assert(false, 'Invalid character count'),
             };
 
-            let direction = match arena.characters_number {
+            let (direction, side) = match arena.characters_number {
                 0 => assert(false, 'Invalid character count'),
-                1 | 2 | 3 => Direction::right,
-                4 | 5 | 6 => Direction::left,
+                1 | 2 | 3 => (Direction::right, Side::Red),
+                4 | 5 | 6 => (Direction::left, Side::Blue),
                 _ => assert(false, 'Invalid character count'),
             }
 
@@ -171,6 +171,8 @@ mod actions {
                 direction,
                 action: BattleAction::Rest,
                 initiative: 0,
+                consecutive_rest_count: 0,
+                side,
             };
 
             set!(world, (arena, character, registered));

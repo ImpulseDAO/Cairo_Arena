@@ -51,8 +51,8 @@ struct Arena {
 
 #[derive(Copy, Drop, Serde, Introspect)]
 struct Position {
-    x: usize,
-    y: usize
+    x: u8,
+    y: u8
 }
 
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
@@ -63,6 +63,12 @@ enum Direction {
     Left,
 }
 
+#[derive(Serde, Copy, Drop, Introspect, PartialEq)]
+enum Side {
+    Red,
+    Blue,
+}
+
 #[derive(Copy, Drop, Serde)]
 #[dojo::model]
 struct ArenaCharacter {
@@ -71,7 +77,7 @@ struct ArenaCharacter {
     #[key]
     cid: u32,
     name: felt252,
-    level: u32,
+    level: u8,
     hp: u32,
     energy: u32,
     attributes: CharacterAttributes,
@@ -80,8 +86,9 @@ struct ArenaCharacter {
     position: Position,
     direction: Direction,
     action: BattleAction,
-    initiative: u32,
-    consecutive_rest_count: u32,
+    initiative: u8,
+    consecutive_rest_count: u8,
+    side: Side,
 }
 
 #[derive(Drop, Serde)]
