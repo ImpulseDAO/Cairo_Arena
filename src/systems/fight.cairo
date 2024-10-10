@@ -57,8 +57,6 @@ mod fight_system {
             let characters_number = arena.characters_number;
             assert(characters_number == 6, 'Arena is not ready');
 
-            let mut winner: felt252 = 0;
-
             let mut arenaGrid: Felt252Dict<u8> = Default::default();
 
             let mut characters = ArrayTrait::new();
@@ -75,15 +73,26 @@ mod fight_system {
                 arenaGrid.insert(grid.into(), i);
             };
 
-            let mut rounds = 0;
-            while rounds < 25 {
-                rounds += 1;
+            let mut turn = 0;
+            let mut red_survivors = 0;
+            let mut blue_survivors = 0;
+            loop {
+                turn += 1;
 
                 let mut active_number: u8 = 0;
                 let mut sequence: Felt252Dict<u8> = Default::default();
                 for c in characters {
+                    // hit player 20 hp every 5 turns
+                    if turn % 5 == 0 {
+                        c.hp = if c.hp > 20 { c.hp - 20 } else { 0 };
+                    }
                     if c.hp == 0 {
                         continue;
+                    }
+                    if c.side == Side::Red {
+                        red_survivors += 1;
+                    } else {
+                        blue_survivors += 1;
                     }
                     active_number += 1;
 
@@ -96,6 +105,14 @@ mod fight_system {
 
                     c.initiative = calculate_initiative(action, c.attributes.agility);
                     sequence.insert(active_number.into(), cid);
+                }
+
+                if red_survivors == 0 {
+                    arena.winner = Side::Blue;
+                    break;
+                } else if blue_survivors == 0 {
+                    arena.winner = Side::Red;
+                    break;
                 }
 
                 // bubble to sort characters by initiative
@@ -127,38 +144,9 @@ mod fight_system {
                 };
             };
 
-            loop {
-                i = 0;
-                let mut winner_count = 0;
-                loop {
-                    i += 1;
-                    if i > characters_number / 2 {
-                        break;
-                    }
-                    let c1 = characters.pop_front().unwrap();
-                    let c2 = characters.pop_front().unwrap();
-                    let (winner, logs) = self.battle(c1, c2);
+            // character_info.experience += get_gain_xp(character_info.level);
 
-                    emit!(world, BattleLog { arena_id: arena_id, logs: logs });
-
-                    characters.append(winner);
-                    winner_count += 1;
-                };
-                if winner_count == 1 {
-                    break;
-                }
-                characters_number = winner_count;
-            };
-
-            // winner is of ArenaCharacter
-            let mut winner = characters.pop_front().unwrap();
-
-            arena.winner = winner.character_owner;
-
-            let mut character_info = get!(world, winner.character_owner, CharacterInfo);
-            character_info.experience += get_gain_xp(character_info.level);
-
-            set!(world, (arena, character_info, winner));
+            set!(world, (arena));
         }
 
         fn get_number_of_players(ref world: IWorldDispatcher, arena_id: u32) -> u8 {
