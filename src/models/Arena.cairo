@@ -9,23 +9,12 @@ enum Direction {
     Left,
 }
 
-#[derive(Serde, Copy, Drop, Introspect)]
-struct CharacterState {
-    hp: u32,
-    position: u32,
-    energy: u32,
-    consecutive_rest_count: u32,
-}
-
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 enum BattleAction {
     QuickAttack,
     PreciseAttack,
     HeavyAttack,
-    MoveRight,
-    MoveLeft,
-    MoveUp,
-    MoveDown,
+    Move
     Rest,
 }
 
@@ -66,12 +55,13 @@ struct Position {
     y: usize
 }
 
-#[derive(Copy, Drop, Serde, Introspect)]
-struct Direction {
-    up,
-    down,
-    right,
-    left,
+#[derive(Serde, Copy, Drop, Introspect, PartialEq)]
+enum Direction {
+    None,
+    Up,
+    Down,
+    Right,
+    Left,
 }
 
 #[derive(Copy, Drop, Serde)]
@@ -92,6 +82,7 @@ struct ArenaCharacter {
     direction: Direction,
     action: BattleAction,
     initiative: u32,
+    consecutive_rest_count: u32,
 }
 
 #[derive(Drop, Serde)]

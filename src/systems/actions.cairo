@@ -1,4 +1,4 @@
-use dojo_arena::models::Arena::{CharacterState, BattleAction, ArenaCharacter, SetTier};
+use dojo_arena::models::Arena::{BattleAction, ArenaCharacter, SetTier};
 use dojo_arena::models::Character::{CharacterAttributes};
 use starknet::ClassHash;
 
@@ -19,13 +19,6 @@ trait IActions {
     fn update_strategy(ref world: IWorldDispatcher, strategy: ClassHash);
 }
 
-#[starknet::interface]
-trait IStrategy<TContractState> {
-    fn determin_action(
-        self: @TContractState, my_state: CharacterState, opponent_state: CharacterState
-    ) -> BattleAction;
-}
-
 #[dojo::contract]
 mod actions {
     use super::{IActions};
@@ -35,7 +28,7 @@ mod actions {
     use starknet::{contract_address_const, class_hash_const};
 
     use dojo_arena::models::Arena::{
-        Arena, ArenaCounter, ArenaCharacter, ArenaRegistered, SetTier, CharacterState, BattleAction, Position, Direction
+        Arena, ArenaCounter, ArenaCharacter, ArenaRegistered, SetTier, BattleAction, Position, Direction
     };
     use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes};
 

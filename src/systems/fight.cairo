@@ -1,4 +1,4 @@
-use dojo_arena::models::Arena::{CharacterState, BattleAction, ArenaCharacter, SetTier};
+use dojo_arena::models::Arena::{BattleAction, ArenaCharacter, SetTier};
 use starknet::ClassHash;
 
 #[dojo::interface]
@@ -11,7 +11,7 @@ trait IFight {
 #[starknet::interface]
 trait IStrategy<TContractState> {
     fn determin_action(
-        self: @TContractState, characters: Span<ArenaCharacter>, ownid: u32,
+        self: @TContractState, characters: Span<ArenaCharacter>, active_index: u32,
     ) -> BattleAction;
 }
 
@@ -24,7 +24,7 @@ mod fight_system {
     use starknet::{contract_address_const, class_hash_const};
 
     use dojo_arena::models::Arena::{
-        Arena, ArenaCounter, ArenaCharacter, ArenaRegistered, SetTier, CharacterState, BattleAction
+        Arena, ArenaCounter, ArenaCharacter, ArenaRegistered, SetTier, BattleAction
     };
     use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes};
 
@@ -60,6 +60,8 @@ mod fight_system {
 
             let mut winner: felt252 = 0;
 
+            let mut arenaGrid: Felt252Dict<u32> = Default::default();
+
             let mut characters = ArrayTrait::new();
             let mut i: usize = 0;
             loop {
@@ -69,6 +71,9 @@ mod fight_system {
                 }
                 let c = get!(world, (arena_id, i), ArenaCharacter);
                 characters.append(c);
+
+                let grid = c.position.x * GRID_WIDTH + c.position.y;
+                arenaGrid.insert(grid.into(), i);
             };
 
             let mut sequence: Felt252Dict<u32> = Default::default();
@@ -141,126 +146,6 @@ mod fight_system {
             character_info.experience += get_gain_xp(character_info.level);
 
             set!(world, (arena, character_info, winner));
-        }
-
-        fn battle(c1: ArenaCharacter, c2: ArenaCharacter) -> (ArenaCharacter, Span<Span<u32>>) {
-            let mut logs = ArrayTrait::new();
-
-            let mut c1_state = CharacterState {
-                hp: c1.hp, position: FIRST_POS, energy: c1.energy, consecutive_rest_count: 0,
-            };
-
-            let mut c2_state = CharacterState {
-                hp: c2.hp, position: SECOND_POS, energy: c2.energy, consecutive_rest_count: 0,
-            };
-
-            let mut c1_initiative: u32 = 0;
-            let mut c2_initiative: u32 = 0;
-            let mut turns: u32 = 0;
-
-            let mut winner = c1.clone();
-            loop {
-                if turns >= 25 {
-                    if c1_state.hp <= c2_state.hp {
-                        winner = c2;
-                    }
-                    break;
-                }
-                turns += 1;
-
-                let mut c1_action: BattleAction = IStrategyLibraryDispatcher {
-                    class_hash: c1.strategy
-                }
-                    .determin_action(c1_state, c2_state);
-
-                let mut c2_action: BattleAction = IStrategyLibraryDispatcher {
-                    class_hash: c2.strategy
-                }
-                    .determin_action(c2_state, c1_state);
-
-                // let mut c1_action: BattleAction = determin_action(c1_state, c2_state);
-                // let mut c2_action: BattleAction = determin_action(c2_state, c1_state);
-
-                if c1_action == BattleAction::Rest {
-                    c1_state.consecutive_rest_count += 1;
-                } else {
-                    c1_state.consecutive_rest_count = 0;
-                }
-
-                if c2_action == BattleAction::Rest {
-                    c2_state.consecutive_rest_count += 1;
-                } else {
-                    c2_state.consecutive_rest_count = 0;
-                }
-
-                c1_initiative = calculate_initiative(c1_action, c1.attributes.agility);
-                c2_initiative = calculate_initiative(c2_action, c2.attributes.agility);
-
-                let mut is_c1_first: bool = true;
-
-                if c1_initiative > c2_initiative {
-                    is_c1_first = false;
-                } else if c1_initiative == c2_initiative {
-                    if c1.attributes.agility < c2.attributes.agility {
-                        is_c1_first = false;
-                    }
-                }
-
-                let mut arr = array![
-                    turns,
-                    c1_state.hp,
-                    c2_state.hp,
-                    c1_state.position,
-                    c2_state.position,
-                    c1_state.energy,
-                    c2_state.energy,
-                    mirror_ation_to_int(c1_action),
-                    mirror_ation_to_int(c2_action),
-                    c1_initiative,
-                    c2_initiative
-                ];
-                logs.append(arr.span());
-
-                if is_c1_first {
-                    execute_action(c1_action, ref c1_state, ref c2_state, @c1, @c2);
-                    if c2_state.hp == 0 {
-                        break;
-                    }
-                    execute_action(c2_action, ref c2_state, ref c1_state, @c2, @c1);
-                    if c1_state.hp == 0 {
-                        winner = c2;
-                        break;
-                    }
-                } else {
-                    execute_action(c2_action, ref c2_state, ref c1_state, @c2, @c1);
-
-                    if c1_state.hp == 0 {
-                        winner = c2;
-                        break;
-                    }
-                    execute_action(c1_action, ref c1_state, ref c2_state, @c1, @c2);
-                    if c2_state.hp == 0 {
-                        break;
-                    }
-                }
-            };
-
-            let mut arr = array![
-                turns + 1,
-                c1_state.hp,
-                c2_state.hp,
-                c1_state.position,
-                c2_state.position,
-                c1_state.energy,
-                c2_state.energy,
-                0,
-                0,
-                0,
-                0
-            ];
-            logs.append(arr.span());
-
-            (winner, logs.span())
         }
 
         fn get_number_of_players(ref world: IWorldDispatcher, arena_id: u32) -> u32 {
