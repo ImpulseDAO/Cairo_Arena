@@ -4,14 +4,13 @@ use starknet::ClassHash;
 #[dojo::interface]
 trait IFight {
     fn play(ref world: IWorldDispatcher, arena_id: u32);
-    fn battle(c1: ArenaCharacter, c2: ArenaCharacter) -> (ArenaCharacter, Span<Span<u32>>);
-    fn get_number_of_players(ref world: IWorldDispatcher, arena_id: u32) -> u32;
+    fn get_number_of_players(ref world: IWorldDispatcher, arena_id: u32) -> u8;
 }
 
 #[starknet::interface]
 trait IStrategy<TContractState> {
     fn determin_action(
-        self: @TContractState, characters: Span<ArenaCharacter>, active_cid: u32, arenaGrid: @Felt252Dict<u32>
+        self: @TContractState, characters: Span<ArenaCharacter>, active_cid: u8, arenaGrid: @Felt252Dict<u8>
     ) -> BattleAction;
 }
 
@@ -60,10 +59,10 @@ mod fight_system {
 
             let mut winner: felt252 = 0;
 
-            let mut arenaGrid: Felt252Dict<u32> = Default::default();
+            let mut arenaGrid: Felt252Dict<u8> = Default::default();
 
             let mut characters = ArrayTrait::new();
-            let mut i: usize = 0;
+            let mut i: u8 = 0;
             loop {
                 i += 1;
                 if i > characters_number {
@@ -81,7 +80,7 @@ mod fight_system {
                 rounds += 1;
 
                 let mut active_number: u8 = 0;
-                let mut sequence: Felt252Dict<u32> = Default::default();
+                let mut sequence: Felt252Dict<u8> = Default::default();
                 for c in characters {
                     if c.hp == 0 {
                         continue;
@@ -100,13 +99,13 @@ mod fight_system {
                 }
 
                 // bubble to sort characters by initiative
-                let mut i: usize = 0;
+                let mut i: u8 = 0;
                 loop {
                     i += 1;
                     if i > active_number{
                         break;
                     }
-                    let mut j: usize = 0;
+                    let mut j: u8 = 0;
                     loop {
                         j += 1;
                         if j > active_number - i {
@@ -162,7 +161,7 @@ mod fight_system {
             set!(world, (arena, character_info, winner));
         }
 
-        fn get_number_of_players(ref world: IWorldDispatcher, arena_id: u32) -> u32 {
+        fn get_number_of_players(ref world: IWorldDispatcher, arena_id: u32) -> u8 {
             let world = self.world_dispatcher.read();
             let mut counter = get!(world, COUNTER_ID, ArenaCounter);
             assert(counter.arena_count >= arena_id && arena_id > 0, 'Arena does not exist');

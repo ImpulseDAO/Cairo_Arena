@@ -54,7 +54,7 @@ fn calculate_initiative(action: BattleAction, agility: u8) -> u8 {
 
 
 
-fn get_gain_xp(level: u32) -> u32 {
+fn get_gain_xp(level: u8) -> u32 {
     if level == 0 {
         300
     } else if level == 1 {
@@ -80,7 +80,7 @@ fn get_gain_xp(level: u32) -> u32 {
     }
 }
 
-fn get_level_xp(level: u32) -> u32 {
+fn get_level_xp(level: u8) -> u32 {
     if level == 0 {
         300
     } else if level == 1 {
@@ -120,8 +120,8 @@ fn ratio(num: u8, deno: u8) -> bool {
 
 fn execute_action(
     ref characters: Array<ArenaCharacter>,
-    active_cid: u32
-    ref arenaGrid: Felt252Dict<u32>
+    active_cid: u8
+    ref arenaGrid: Felt252Dict<u8>
 ) {
     let c = characters.at(active_cid - 1);
     let target_pos = match c.direction {

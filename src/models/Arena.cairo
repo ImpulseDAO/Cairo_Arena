@@ -44,7 +44,7 @@ struct Arena {
     player: ContractAddress,
     name: felt252,
     current_tier: SetTier,
-    characters_number: u32,
+    characters_number: u8,
     winner: felt252,
     is_closed: bool,
 }
@@ -75,7 +75,7 @@ struct ArenaCharacter {
     #[key]
     arena_id: u32,
     #[key]
-    cid: u32,
+    cid: u8,
     name: felt252,
     level: u8,
     hp: u32,

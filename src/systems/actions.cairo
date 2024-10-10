@@ -14,7 +14,7 @@ trait IActions {
     fn register(ref world: IWorldDispatcher, arena_id: u32);
     fn level_up(ref world: IWorldDispatcher);
     fn assign_points(
-        ref world: IWorldDispatcher, strength: u32, agility: u32, vitality: u32, stamina: u32
+        ref world: IWorldDispatcher, strength: u8, agility: u8, vitality: u8, stamina: u8
     );
     fn update_strategy(ref world: IWorldDispatcher, strategy: ClassHash);
 }
@@ -195,7 +195,7 @@ mod actions {
         }
 
         fn assign_points(
-            ref world: IWorldDispatcher, strength: u32, agility: u32, vitality: u32, stamina: u32
+            ref world: IWorldDispatcher, strength: u8, agility: u8, vitality: u8, stamina: u8
         ) {
             let player = get_caller_address();
 
