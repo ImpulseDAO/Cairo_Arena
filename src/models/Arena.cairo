@@ -57,7 +57,6 @@ struct Position {
 
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 enum Direction {
-    None,
     Up,
     Down,
     Right,

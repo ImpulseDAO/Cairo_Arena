@@ -11,7 +11,7 @@ trait IFight {
 #[starknet::interface]
 trait IStrategy<TContractState> {
     fn determin_action(
-        self: @TContractState, characters: Span<ArenaCharacter>, active_id: u32,
+        self: @TContractState, characters: Span<ArenaCharacter>, active_cid: u32, arenaGrid: @Felt252Dict<u32>
     ) -> BattleAction;
 }
 
@@ -76,43 +76,56 @@ mod fight_system {
                 arenaGrid.insert(grid.into(), i);
             };
 
-            let mut sequence: Felt252Dict<u32> = Default::default();
-            for c in characters {
-                let cid = c.cid;
-                c.action = IStrategyLibraryDispatcher {
-                    class_hash: c.strategy
-                }.determin_action(characters.span(), cid);
-                c.initiative = calculate_initiative(action, c.attributes.agility);
-                sequence.insert(cid.into(), cid);
-            }
+            let mut rounds = 0;
+            while rounds < 25 {
+                rounds += 1;
 
-            let mut active_character = characters.at(0);
-            // bubble to sort characters by initiative
-            let mut i: usize = 0;
-            loop {
-                i += 1;
-                if i > characters_number{
-                    break;
+                let mut active_number: u8 = 0;
+                let mut sequence: Felt252Dict<u32> = Default::default();
+                for c in characters {
+                    if c.hp == 0 {
+                        continue;
+                    }
+                    active_number += 1;
+
+                    let cid = c.cid;
+                    let (action, direction) = IStrategyLibraryDispatcher {
+                        class_hash: c.strategy
+                    }.determin_action(characters.span(), cid, @arenaGrid);
+                    c.action = action;
+                    c.direction = direction;
+
+                    c.initiative = calculate_initiative(action, c.attributes.agility);
+                    sequence.insert(active_number.into(), cid);
                 }
-                let mut j: usize = 0;
+
+                // bubble to sort characters by initiative
+                let mut i: usize = 0;
                 loop {
-                    j += 1;
-                    if j > characters_number - i {
+                    i += 1;
+                    if i > active_number{
                         break;
                     }
-                    if characters.at(sequence.get(j.into()) - 1).initiative > characters.at(sequence.get((j+1).into()) - 1).initiative {
-                        let temp = sequence.get(j.into());
-                        sequence.insert(j.into(), sequence.get((j+1).into()));
-                        sequence.insert((j+1).into(), temp);
-                    }
+                    let mut j: usize = 0;
+                    loop {
+                        j += 1;
+                        if j > active_number - i {
+                            break;
+                        }
+                        if characters.at(sequence.get(j.into()) - 1).initiative > characters.at(sequence.get((j+1).into()) - 1).initiative {
+                            let temp = sequence.get(j.into());
+                            sequence.insert(j.into(), sequence.get((j+1).into()));
+                            sequence.insert((j+1).into(), temp);
+                        }
+                    };
+                };
+
+                for sid in 1..active_number+1 {
+                    let cid = sequence.get(sid.into());
+                    execute_action(characters, cid, arenaGrid);
                 };
             };
 
-            for sid in 1..characters_number+1 {
-                let cid = sequence.get(sid.into());
-                let mut c = characters.at(cid - 1);
-                execute_action();
-            };
             
             loop {
                 i = 0;

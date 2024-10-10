@@ -119,18 +119,12 @@ fn ratio(num: u128, deno: u128) -> bool {
 }
 
 fn execute_action(
-    world: IWorldDispatcher,
-    action: BattleAction,
     ref characters: Array<ArenaCharacter>,
-    active_index: u32
-    direction: Direction,
+    active_cid: u32
     ref arenaGrid: Felt252Dict<u32>
 ) {
-    let c = characters.at(active_index);
-    let target_pos = match direction {
-        Direction::None => {
-            Position { x: c.position.x, y: c.position.y }
-        },
+    let c = characters.at(active_cid - 1);
+    let target_pos = match c.direction {
         Direction::Up => {
             if c.position.y < GRID_HEIGHT - 1 {
                 Position { x: c.position.x, y: c.position.y + 1 }
@@ -161,7 +155,7 @@ fn execute_action(
         },
     };
 
-    match action {
+    match c.action {
         BattleAction::QuickAttack => {
             if c.energy >= QUICK_ATC_ENERGY {
                 c.energy -= QUICK_ATC_ENERGY;
@@ -179,6 +173,7 @@ fn execute_action(
                                 target.hp -= damage;
                             } else {
                                 target.hp = 0;
+                                arenaGrid.insert(grid.into(), 0);
                             }
                         }
                     }
@@ -202,6 +197,7 @@ fn execute_action(
                                 target.hp -= damage;
                             } else {
                                 target.hp = 0;
+                                arenaGrid.insert(grid.into(), 0);
                             }
                         }
                     }
@@ -225,6 +221,7 @@ fn execute_action(
                                 target.hp -= damage;
                             } else {
                                 target.hp = 0;
+                                arenaGrid.insert(grid.into(), 0);
                             }
                         }
                     }
@@ -254,7 +251,7 @@ fn execute_action(
         },
     };
 
-    if action != BattleAction::Rest {
+    if c.action != BattleAction::Rest {
         c.consecutive_rest_count = 0;
     }
 }
