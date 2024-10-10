@@ -232,10 +232,12 @@ fn execute_action(
             if c.energy >= 1 {
                 c.energy -= 1;
 
-                if c.position.x != target_pos.x || c.position.y == target_pos.y { 
+                if c.position.x != target_pos.x || c.position.y != target_pos.y { 
                     let grid = target_pos * GRID_WIDTH + target_pos.y;
                     let target_index = arenaGrid.get(grid.into());
                     if target_index == 0 {
+                        arenaGrid.insert(c.position.x * GRID_WIDTH + c.position.y, 0);
+                        arenaGrid.insert(grid.into(), active_cid);
                         c.position = target_pos;
                     }
                 }

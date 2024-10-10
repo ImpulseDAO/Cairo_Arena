@@ -112,7 +112,9 @@ mod fight_system {
                         if j > active_number - i {
                             break;
                         }
-                        if characters.at(sequence.get(j.into()) - 1).initiative > characters.at(sequence.get((j+1).into()) - 1).initiative {
+                        let c1 = characters.at(sequence.get(j.into()) - 1);
+                        let c2 = characters.at(sequence.get((j+1).into()) - 1);
+                        if c1.initiative > c2.initiative || (c1.initiative == c2.initiative && c1.agility < c2.agility) {
                             let temp = sequence.get(j.into());
                             sequence.insert(j.into(), sequence.get((j+1).into()));
                             sequence.insert((j+1).into(), temp);
@@ -126,7 +128,6 @@ mod fight_system {
                 };
             };
 
-            
             loop {
                 i = 0;
                 let mut winner_count = 0;
