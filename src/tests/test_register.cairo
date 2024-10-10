@@ -118,9 +118,9 @@ mod tests {
 
         let counter = get!(world, COUNTER_ID, (ArenaCounter));
         let arena = get!(world, counter.arena_count, (Arena));
-        assert(arena.character_count == 1, 'Character count is not correct');
+        assert(arena.characters_number == 1, 'Character count is not correct');
 
-        let character = get!(world, (arena.id, arena.character_count), (ArenaCharacter));
+        let character = get!(world, (arena.id, arena.characters_number), (ArenaCharacter));
         assert(character.name == 'asten', 'name is not correct');
         assert(character.attributes.strength == 2, 'strength is not correct');
         assert(character.attributes.agility == 2, 'agility is not correct');

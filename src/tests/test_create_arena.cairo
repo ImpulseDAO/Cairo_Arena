@@ -42,7 +42,7 @@ mod tests {
         assert(arena.name == 'Sky Arena', 'name is not correct');
         assert(arena.player == player, 'owner is not correct');
         assert(arena.current_tier == SetTier::Tier5, 'Tier is not correct');
-        assert(arena.character_count == 0, 'Character count is not correct');
+        assert(arena.characters_number == 0, 'Character count is not correct');
         assert(arena.winner == starknet::contract_address_const::<0>(), 'winner is not correct');
     }
 }

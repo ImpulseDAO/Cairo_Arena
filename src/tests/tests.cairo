@@ -97,13 +97,13 @@ mod tests {
         actions_system.createArena('Sky Arena', SetTier::Tier5);
 
         let mut arena = get!(world, 1, (Arena));
-        arena.character_count = 2;
+        arena.characters_number = 2;
         arena.total_rating = 100;
         set!(world, (arena));
 
         let c1 = ArenaCharacter {
             arena_id: 1,
-            character_count: 1,
+            cid: 1,
             name: 'c1',
             hp: 30,
             energy: 26,
@@ -116,7 +116,7 @@ mod tests {
 
         let c2 = ArenaCharacter {
             arena_id: 1,
-            character_count: 2,
+            cid: 2,
             name: 'c2',
             hp: 30,
             energy: 26,

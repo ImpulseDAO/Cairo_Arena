@@ -98,7 +98,7 @@ mod actions {
                 player,
                 name,
                 current_tier,
-                character_count: 0,
+                characters_number: 0,
                 winner: 0,
                 is_closed: false,
             };
@@ -114,8 +114,8 @@ mod actions {
 
             let mut arena = get!(world, arena_id, (Arena));
             assert(!arena.is_closed, 'Arena is closed');
-            assert(arena.character_count < 6, 'Arena is full');
-            arena.character_count += 1;
+            assert(arena.characters_number < 6, 'Arena is full');
+            arena.characters_number += 1;
 
             let character_info = get!(world, player, CharacterInfo);
             assert(character_info.name != '', 'Character does not exist');
@@ -139,7 +139,7 @@ mod actions {
             let hp = character_info.attributes.vitality * HP_MULTIPLIER + BASE_HP;
             let energy = character_info.attributes.stamina * ENERGY_MULTIPLIER + BASE_ENERGY;
 
-            let position = match arena.character_count {
+            let position = match arena.characters_number {
                 0 => assert(false, 'Invalid character count'),
                 1 => FIRST_POS,
                 2 => SECOND_POS,
@@ -150,7 +150,7 @@ mod actions {
                 _ => assert(false, 'Invalid character count'),
             };
 
-            let direction = match arena.character_count {
+            let direction = match arena.characters_number {
                 0 => assert(false, 'Invalid character count'),
                 1 | 2 | 3 => Direction::right,
                 4 | 5 | 6 => Direction::left,
@@ -159,7 +159,7 @@ mod actions {
 
             let character = ArenaCharacter {
                 arena_id: arena.id,
-                character_count: arena.character_count,
+                cid: arena.characters_number,
                 name: character_info.name,
                 level: character_info.level,
                 hp,
