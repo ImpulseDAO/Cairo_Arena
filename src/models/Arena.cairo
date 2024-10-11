@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
 use starknet::ClassHash;
-use dojo_arena::models::Character::{CharacterAttributes};
+use cairo_arena::models::Character::{CharacterAttributes};
 
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 enum BattleAction {

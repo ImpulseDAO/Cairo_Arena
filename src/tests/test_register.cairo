@@ -10,11 +10,11 @@ mod tests {
 
     use dojo::utils::test::{spawn_test_world, deploy_contract};
 
-    use dojo_arena::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
-    use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes};
-    use dojo_arena::models::Arena::{Arena, ArenaCounter, SetTier, ArenaCharacter, ArenaRegistered};
+    use cairo_arena::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
+    use cairo_arena::models::Character::{CharacterInfo, CharacterAttributes};
+    use cairo_arena::models::Arena::{Arena, ArenaCounter, SetTier, ArenaCharacter, ArenaRegistered};
 
-    use dojo_arena::constants::{COUNTER_ID, HP_MULTIPLIER, BASE_HP, ENERGY_MULTIPLIER, BASE_ENERGY};
+    use cairo_arena::constants::{COUNTER_ID, HP_MULTIPLIER, BASE_HP, ENERGY_MULTIPLIER, BASE_ENERGY};
 
     fn get_systems(world: IWorldDispatcher) -> (ContractAddress, IActionsDispatcher,) {
         let actions_address = world

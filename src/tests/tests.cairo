@@ -9,10 +9,10 @@ mod tests {
     use dojo::test_utils::{spawn_test_world, deploy_contract};
 
     // import models
-    use dojo_arena::models::{character_info, counter, arena, arena_character};
-    use dojo_arena::models::{CharacterInfo, Counter, Arena, ArenaCharacter};
+    use cairo_arena::models::{character_info, counter, arena, arena_character};
+    use cairo_arena::models::{CharacterInfo, Counter, Arena, ArenaCharacter};
 
-    use dojo_arena::models::io::{SetTier, CharacterAttributes};
+    use cairo_arena::models::io::{SetTier, CharacterAttributes};
 
     // import actions
     use super::{

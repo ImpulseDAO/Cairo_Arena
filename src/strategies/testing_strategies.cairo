@@ -1,4 +1,4 @@
-use dojo_arena::models::Arena::{ArenaCharacter, BattleAction, Direction};
+use cairo_arena::models::Arena::{ArenaCharacter, BattleAction, Direction};
 
 #[starknet::interface]
 trait IStrategy<TContractState> {

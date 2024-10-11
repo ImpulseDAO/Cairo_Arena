@@ -10,13 +10,13 @@ mod tests {
 
     use dojo::utils::test::{spawn_test_world, deploy_contract};
 
-    use dojo_arena::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
-    use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes};
-    use dojo_arena::models::Arena::{Arena, ArenaCounter, SetTier, ArenaCharacter, ArenaRegistered};
+    use cairo_arena::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
+    use cairo_arena::models::Character::{CharacterInfo, CharacterAttributes};
+    use cairo_arena::models::Arena::{Arena, ArenaCounter, SetTier, ArenaCharacter, ArenaRegistered};
 
-    use dojo_arena::strategies::testing_strategies::Strategy;
+    use cairo_arena::strategies::testing_strategies::Strategy;
 
-    use dojo_arena::constants::COUNTER_ID;
+    use cairo_arena::constants::COUNTER_ID;
 
     use debug::PrintTrait;
 

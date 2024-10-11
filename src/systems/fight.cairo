@@ -1,4 +1,4 @@
-use dojo_arena::models::Arena::{BattleAction, ArenaCharacter, Direction};
+use cairo_arena::models::Arena::{BattleAction, ArenaCharacter, Direction};
 
 #[dojo::interface]
 trait IFight {
@@ -21,13 +21,13 @@ mod fight_system {
     use starknet::{ContractAddress, get_caller_address};
     use starknet::{contract_address_const, class_hash_const};
 
-    use dojo_arena::models::Arena::{
+    use cairo_arena::models::Arena::{
         Arena, ArenaCounter, ArenaCharacter, Side, BattleAction, Direction
     };
 
-    use dojo_arena::constants::{TIE, COUNTER_ID, RED, BLUE, GRID_WIDTH, GRID_HEIGHT};
+    use cairo_arena::constants::{TIE, COUNTER_ID, RED, BLUE, GRID_WIDTH, GRID_HEIGHT};
 
-    use dojo_arena::utils::{calculate_initiative, execute_action};
+    use cairo_arena::utils::{calculate_initiative, execute_action};
 
     #[derive(Copy, Drop, Serde)]
     #[dojo::model]

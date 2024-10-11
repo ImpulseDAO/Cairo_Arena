@@ -1,5 +1,5 @@
-use dojo_arena::models::Arena::{BattleAction, ArenaCharacter, SetTier};
-use dojo_arena::models::Character::{CharacterAttributes};
+use cairo_arena::models::Arena::{BattleAction, ArenaCharacter, SetTier};
+use cairo_arena::models::Character::{CharacterAttributes};
 use starknet::ClassHash;
 
 #[dojo::interface]
@@ -27,19 +27,19 @@ mod actions {
     use starknet::{ContractAddress, get_caller_address, ClassHash};
     use starknet::{contract_address_const, class_hash_const};
 
-    use dojo_arena::models::Arena::{
+    use cairo_arena::models::Arena::{
         Arena, ArenaCounter, ArenaCharacter, ArenaRegistered, SetTier, BattleAction, Position, Direction, Side
     };
-    use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes};
+    use cairo_arena::models::Character::{CharacterInfo, CharacterAttributes};
 
-    use dojo_arena::constants::{
+    use cairo_arena::constants::{
         HP_MULTIPLIER, BASE_HP, ENERGY_MULTIPLIER, BASE_ENERGY, COUNTER_ID,
         MAX_LEVEL, MAX_STRENGTH, MAX_AGILITY, MAX_VITALITY, MAX_STAMINA,
         FIRST_POS, SECOND_POS, THIRD_POS, FOURTH_POS, FIFTH_POS, SIXTH_POS,
         TIE, RED, BLUE
     };
 
-    use dojo_arena::utils::{
+    use cairo_arena::utils::{
         calculate_initiative, execute_action, get_gain_xp, get_level_xp
     };
 
