@@ -22,7 +22,6 @@ trait IActions {
 #[dojo::contract]
 mod actions {
     use super::{IActions};
-    use super::{IStrategyDispatcherTrait, IStrategyLibraryDispatcher};
 
     use starknet::{ContractAddress, get_caller_address, ClassHash};
     use starknet::{contract_address_const, class_hash_const};
@@ -33,14 +32,13 @@ mod actions {
     use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes};
 
     use dojo_arena::constants::{
-        HP_MULTIPLIER, BASE_HP, ENERGY_MULTIPLIER, BASE_ENERGY, COUNTER_ID, FIRST_POS, SECOND_POS,
+        HP_MULTIPLIER, BASE_HP, ENERGY_MULTIPLIER, BASE_ENERGY, COUNTER_ID,
         MAX_LEVEL, MAX_STRENGTH, MAX_AGILITY, MAX_VITALITY, MAX_STAMINA,
-        FIRST_POS, SECOND_POS, THIRD_POS, FOURTH_POS, FIFTH_POS, SIXTH_POS
+        FIRST_POS, SECOND_POS, THIRD_POS, FOURTH_POS, FIFTH_POS, SIXTH_POS,
     };
 
     use dojo_arena::utils::{
-        new_pos_and_hit, new_pos_and_steps, calculate_initiative, execute_action, get_gain_xp,
-        get_level_xp, mirror_ation_to_int
+        calculate_initiative, execute_action, get_gain_xp, get_level_xp
     };
 
     #[abi(embed_v0)]
@@ -136,26 +134,40 @@ mod actions {
                 'Character tier is not allowed'
             );
 
-            let hp = character_info.attributes.vitality * HP_MULTIPLIER + BASE_HP;
-            let energy = character_info.attributes.stamina * ENERGY_MULTIPLIER + BASE_ENERGY;
+            let hp = character_info.attributes.vitality.into() * HP_MULTIPLIER + BASE_HP;
+            let energy = character_info.attributes.stamina.into() * ENERGY_MULTIPLIER + BASE_ENERGY;
 
-            let position = match arena.characters_number {
-                0 => assert(false, 'Invalid character count'),
+            let (x, y): (u8, u8) = match arena.characters_number {
+                0 => {
+                    assert(false, 'Invalid character count');
+                    (0, 0)
+                },
                 1 => FIRST_POS,
                 2 => SECOND_POS,
                 3 => THIRD_POS,
                 4 => FOURTH_POS,
                 5 => FIFTH_POS,
                 6 => SIXTH_POS,
-                _ => assert(false, 'Invalid character count'),
+                _ => {
+                    assert(false, 'Invalid character count');
+                    (0, 0)
+                },
             };
 
+            let position = Position { x, y };
+
             let (direction, side) = match arena.characters_number {
-                0 => assert(false, 'Invalid character count'),
-                1 | 2 | 3 => (Direction::right, Side::Red),
-                4 | 5 | 6 => (Direction::left, Side::Blue),
-                _ => assert(false, 'Invalid character count'),
-            }
+                0 => {
+                    assert(false, 'Invalid character count');
+                    (Direction::Up, Side::Red)
+                },
+                1 | 2 | 3 => (Direction::Right, Side::Red),
+                4 | 5 | 6 => (Direction::Left, Side::Blue),
+                _ => {
+                    assert(false, 'Invalid character count');
+                    (Direction::Up, Side::Red)
+                },
+            };
 
             let character = ArenaCharacter {
                 arena_id: arena.id,

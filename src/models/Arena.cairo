@@ -2,19 +2,12 @@ use starknet::ContractAddress;
 use starknet::ClassHash;
 use dojo_arena::models::Character::{CharacterAttributes};
 
-
-#[derive(Serde, Copy, Drop, Introspect)]
-enum Direction {
-    Right,
-    Left,
-}
-
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 enum BattleAction {
     QuickAttack,
     PreciseAttack,
     HeavyAttack,
-    Move
+    Move,
     Rest,
 }
 

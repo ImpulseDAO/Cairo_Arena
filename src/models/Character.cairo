@@ -19,6 +19,6 @@ struct CharacterInfo {
     strategy: ClassHash,
     level: u8,
     experience: u32,
-    points: u32,
+    points: u8,
     golds: u32,
 }

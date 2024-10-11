@@ -1,4 +1,4 @@
-use dojo_arena::models::Arena::{BattleAction, Direction, ArenaCharacter};
+use dojo_arena::models::Arena::{BattleAction, Direction, ArenaCharacter, Position};
 use dojo_arena::constants::{
     AGI_INITIATIVE_MODIFIER, QUICK_ATC_INI, PRECISE_ATC_INI, HEAVY_ATC_INI, MOVE_INI, REST_INI,
     QUICK_HIT_CHANCE, PRECISE_HIT_CHANCE, HEAVY_HIT_CHANCE, REST_RECOVERY,
@@ -33,7 +33,7 @@ fn calculate_initiative(action: BattleAction, agility: u8) -> u8 {
                 result = 0;
             }
         },
-        BattleAction::MoveRight | BattleAction::MoveLeft | BattleAction::MoveUp | BattleAction::MoveDown => {
+        BattleAction::Move => {
             if MOVE_INI > modifier {
                 result = MOVE_INI - modifier;
             } else {
@@ -120,10 +120,10 @@ fn ratio(num: u8, deno: u8) -> bool {
 
 fn execute_action(
     ref characters: Array<ArenaCharacter>,
-    active_cid: u8
+    active_cid: u8,
     ref arenaGrid: Felt252Dict<u8>
 ) {
-    let c = characters.at(active_cid - 1);
+    let mut c = *characters.at(active_cid.into() - 1);
     let target_pos = match c.direction {
         Direction::Up => {
             if c.position.y < GRID_HEIGHT - 1 {
@@ -164,11 +164,11 @@ fn execute_action(
                     let grid = target_pos.x * GRID_WIDTH + target_pos.y;
                     let target_index = arenaGrid.get(grid.into());
                     if target_index != 0 {
-                        let target = characters.at(target_index - 1);
+                        let mut target = *characters.at(target_index.into() - 1);
 
                         let is_hit = ratio(QUICK_HIT_CHANCE + 2 * (c.attributes.agility).into(), 100);                  
                         if is_hit {
-                            let damage = c.attributes.strength * 2 + QUICK_ATC_DAMAGE;
+                            let damage = c.attributes.strength.into() * 2 + QUICK_ATC_DAMAGE;
                             if target.hp > damage {
                                 target.hp -= damage;
                             } else {
@@ -188,11 +188,11 @@ fn execute_action(
                     let grid = target_pos.x * GRID_WIDTH + target_pos.y;
                     let target_index = arenaGrid.get(grid.into());
                     if target_index != 0 {
-                        let target = characters.at(target_index - 1);
+                        let mut target = *characters.at(target_index.into() - 1);
 
                         let is_hit = ratio(PRECISE_HIT_CHANCE + 2 * (c.attributes.agility).into(), 100);
                         if is_hit {
-                            let damage = c.attributes.strength * 3 + PRECISE_ATC_DAMAGE;
+                            let damage = c.attributes.strength.into() * 3 + PRECISE_ATC_DAMAGE;
                             if target.hp > damage {
                                 target.hp -= damage;
                             } else {
@@ -212,11 +212,11 @@ fn execute_action(
                     let grid = target_pos.x * GRID_WIDTH + target_pos.y;
                     let target_index = arenaGrid.get(grid.into());
                     if target_index != 0 {
-                        let target = characters.at(target_index - 1);
+                        let mut target = *characters.at(target_index.into() - 1);
 
                         let is_hit = ratio(HEAVY_HIT_CHANCE + 2 * (c.attributes.agility).into(), 100);
                         if is_hit {
-                            let damage = c.attributes.strength * 4 + HEAVY_ATC_DAMAGE;
+                            let damage = c.attributes.strength.into() * 4 + HEAVY_ATC_DAMAGE;
                             if target.hp > damage {
                                 target.hp -= damage;
                             } else {
@@ -233,10 +233,10 @@ fn execute_action(
                 c.energy -= 1;
 
                 if c.position.x != target_pos.x || c.position.y != target_pos.y { 
-                    let grid = target_pos * GRID_WIDTH + target_pos.y;
+                    let grid = target_pos.x * GRID_WIDTH + target_pos.y;
                     let target_index = arenaGrid.get(grid.into());
                     if target_index == 0 {
-                        arenaGrid.insert(c.position.x * GRID_WIDTH + c.position.y, 0);
+                        arenaGrid.insert((c.position.x * GRID_WIDTH + c.position.y).into(), 0);
                         arenaGrid.insert(grid.into(), active_cid);
                         c.position = target_pos;
                     }
@@ -244,8 +244,7 @@ fn execute_action(
             }
         },
         BattleAction::Rest => {
-            let rest_penalty = c.consecutive_rest_count
-                * (c.consecutive_rest_count - 1);
+            let rest_penalty = (c.consecutive_rest_count * (c.consecutive_rest_count - 1)).into();
             if rest_penalty < REST_RECOVERY {
                 c.energy += REST_RECOVERY - rest_penalty;
             }

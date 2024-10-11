@@ -1,4 +1,4 @@
-use dojo_arena::models::Arena::{BattleAction, ArenaCharacter, SetTier};
+use dojo_arena::models::Arena::{BattleAction, ArenaCharacter, SetTier, Direction};
 use starknet::ClassHash;
 
 #[dojo::interface]
@@ -11,29 +11,28 @@ trait IFight {
 trait IStrategy<TContractState> {
     fn determin_action(
         self: @TContractState, characters: Span<ArenaCharacter>, active_cid: u8, arenaGrid: @Felt252Dict<u8>
-    ) -> BattleAction;
+    ) -> (BattleAction, Direction);
 }
 
 #[dojo::contract]
 mod fight_system {
-    use super::{IActions};
+    use super::{IFight};
     use super::{IStrategyDispatcherTrait, IStrategyLibraryDispatcher};
 
     use starknet::{ContractAddress, get_caller_address, ClassHash};
     use starknet::{contract_address_const, class_hash_const};
 
     use dojo_arena::models::Arena::{
-        Arena, ArenaCounter, ArenaCharacter, ArenaRegistered, SetTier, BattleAction
+        Arena, ArenaCounter, ArenaCharacter, ArenaRegistered, SetTier, BattleAction, Side
     };
     use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes};
 
     use dojo_arena::constants::{
-        GRID_WIDTH, GRID_HEIGHT, TIE
+        GRID_WIDTH, GRID_HEIGHT, TIE, COUNTER_ID, RED, BLUE
     };
 
     use dojo_arena::utils::{
-        new_pos_and_hit, new_pos_and_steps, calculate_initiative, execute_action, get_gain_xp,
-        get_level_xp, mirror_ation_to_int
+        calculate_initiative, execute_action, get_gain_xp, get_level_xp
     };
 
     #[derive(Copy, Drop, Serde)]
@@ -66,22 +65,26 @@ mod fight_system {
                 if i > characters_number {
                     break;
                 }
-                let c = get!(world, (arena_id, i), ArenaCharacter);
+                let mut c = get!(world, (arena_id, i), ArenaCharacter);
                 characters.append(c);
 
                 let grid = c.position.x * GRID_WIDTH + c.position.y;
                 arenaGrid.insert(grid.into(), i);
             };
 
-            let mut turn = 0;
-            let mut red_survivors = 0;
-            let mut blue_survivors = 0;
+            let mut turn: u8 = 0;
+            let mut red_survivors: u8 = 0;
+            let mut blue_survivors: u8 = 0;
             loop {
                 turn += 1;
 
                 let mut active_number: u8 = 0;
                 let mut sequence: Felt252Dict<u8> = Default::default();
-                for c in characters {
+                let characters_span = characters.span();
+
+                let mut c_index: u8 = 0;
+                while c_index < characters_number {
+                    let mut c = *characters.at(c_index.into());
                     // hit player 20 hp every 5 turns
                     if turn % 5 == 0 {
                         c.hp = if c.hp > 20 { c.hp - 20 } else { 0 };
@@ -99,22 +102,24 @@ mod fight_system {
                     let cid = c.cid;
                     let (action, direction) = IStrategyLibraryDispatcher {
                         class_hash: c.strategy
-                    }.determin_action(characters.span(), cid, @arenaGrid);
+                    }.determin_action(characters_span, cid, @arenaGrid);
                     c.action = action;
                     c.direction = direction;
 
                     c.initiative = calculate_initiative(action, c.attributes.agility);
                     sequence.insert(active_number.into(), cid);
-                }
+
+                    c_index += 1;
+                };
 
                 if red_survivors == 0 && blue_survivors == 0 {
                     arena.winner = TIE;
                     break;
                 } else if blue_survivors == 0 {
-                    arena.winner = Side::Red;
+                    arena.winner = RED;
                     break;
                 } else if red_survivors == 0 {
-                    arena.winner = Side::Blue;
+                    arena.winner = BLUE;
                     break;
                 }
 
@@ -131,9 +136,9 @@ mod fight_system {
                         if j > active_number - i {
                             break;
                         }
-                        let c1 = characters.at(sequence.get(j.into()) - 1);
-                        let c2 = characters.at(sequence.get((j+1).into()) - 1);
-                        if c1.initiative > c2.initiative || (c1.initiative == c2.initiative && c1.agility < c2.agility) {
+                        let c1 = characters.at(sequence.get(j.into()).into() - 1);
+                        let c2 = characters.at(sequence.get((j+1).into()).into() - 1);
+                        if c1.initiative > c2.initiative || (c1.initiative == c2.initiative && c1.attributes.agility < c2.attributes.agility) {
                             let temp = sequence.get(j.into());
                             sequence.insert(j.into(), sequence.get((j+1).into()));
                             sequence.insert((j+1).into(), temp);
@@ -141,9 +146,11 @@ mod fight_system {
                     };
                 };
 
-                for sid in 1..active_number+1 {
-                    let cid = sequence.get(sid.into());
-                    execute_action(characters, cid, arenaGrid);
+                let mut k: u8 = 0;
+                while k < active_number {
+                    k += 1;
+                    let cid = sequence.get(k.into());
+                    execute_action(ref characters, cid, ref arenaGrid);
                 };
             };
 
