@@ -10,7 +10,7 @@ trait IActions {
         attributes: CharacterAttributes,
         strategy: ClassHash
     );
-    fn createArena(ref world: IWorldDispatcher, name: felt252, current_tier: SetTier);
+    fn createArena(ref world: IWorldDispatcher, name: felt252);
     fn closeArena(ref world: IWorldDispatcher, arena_id: u32);
     fn register(ref world: IWorldDispatcher, arena_id: u32);
     fn level_up(ref world: IWorldDispatcher);
@@ -90,8 +90,19 @@ mod actions {
             );
         }
 
-        fn createArena(ref world: IWorldDispatcher, name: felt252, current_tier: SetTier) {
+        fn createArena(ref world: IWorldDispatcher, name: felt252) {
             let player = get_caller_address();
+
+            let character_info = get!(world, player, CharacterInfo);
+            assert(character_info.name != '', 'Character does not exist');
+
+            let current_tier = match character_info.level {
+                0 => SetTier::Tier5,
+                1 => SetTier::Tier4,
+                2 | 3 | 4 => SetTier::Tier3,
+                5 | 6 | 7| 8 => SetTier::Tier2,
+                _ => SetTier::Tier1,
+            };
 
             let mut counter = get!(world, COUNTER_ID, ArenaCounter);
             counter.arena_count += 1;
@@ -101,12 +112,39 @@ mod actions {
                 player,
                 name,
                 current_tier,
-                characters_number: 0,
+                characters_number: 1,
                 winner: 0,
                 is_closed: false,
             };
 
-            set!(world, (arena, counter));
+            let hp = character_info.attributes.vitality.into() * HP_MULTIPLIER + BASE_HP;
+            let energy = character_info.attributes.stamina.into() * ENERGY_MULTIPLIER + BASE_ENERGY;
+
+            let (x, y): (u8, u8) = FIRST_POS;
+            let position = Position { x, y };
+
+            let character = ArenaCharacter {
+                arena_id: arena.id,
+                cid: arena.characters_number,
+                name: character_info.name,
+                level: character_info.level,
+                hp,
+                energy,
+                attributes: character_info.attributes,
+                character_owner: player,
+                strategy: character_info.strategy,
+                position,
+                direction: Direction::Right,
+                action: BattleAction::Rest,
+                initiative: 0,
+                consecutive_rest_count: 0,
+                side: Side::Red,
+            };
+
+            let mut registered = get!(world, (arena.id, player), ArenaRegistered);
+            registered.registered = true;
+
+            set!(world, (arena, counter, character, registered));
         }
 
         fn closeArena(ref world: IWorldDispatcher, arena_id: u32) {

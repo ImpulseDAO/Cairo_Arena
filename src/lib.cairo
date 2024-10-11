@@ -10,7 +10,7 @@ mod models {
 
 mod tests {
     mod test_create_character;
-//     mod test_create_arena;
+    mod test_create_arena;
 //     mod test_register;
 //     mod test_play;
 }
