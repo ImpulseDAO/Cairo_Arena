@@ -53,6 +53,9 @@ mod actions {
         ) {
             let player = get_caller_address();
 
+            let character_info = get!(world, player, CharacterInfo);
+            assert(character_info.name == '', 'Character already exists');
+
             assert(name != '', 'name cannot be empty');
 
             assert(

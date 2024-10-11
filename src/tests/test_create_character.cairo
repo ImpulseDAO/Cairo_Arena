@@ -60,4 +60,25 @@ mod tests {
                 starknet::class_hash_const::<0x123>()
             );
     }
+
+    #[test]
+    #[should_panic(expected: ('Character already exists', 'ENTRYPOINT_FAILED'))]
+    #[available_gas(3000000000000000)]
+    fn test_create_character_already_exists() {
+        let world = spawn_test_world!();
+        let (_, mut actions_system,) = get_systems(world);
+
+        actions_system
+            .createCharacter(
+                'Alice',
+                CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+                starknet::class_hash_const::<0x123>()
+            );
+
+        actions_system.createCharacter(
+            'Bob',
+            CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
+            starknet::class_hash_const::<0x123>()
+        );
+    }
 }
