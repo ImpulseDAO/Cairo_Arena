@@ -10,7 +10,7 @@ trait IFight {
 #[starknet::interface]
 trait IStrategy<TContractState> {
     fn determin_action(
-        self: @TContractState, characters: Span<ArenaCharacter>, active_cid: u8, arenaGrid: @Felt252Dict<u8>
+        self: @TContractState, characters: Span<ArenaCharacter>, active_cid: u8
     ) -> (BattleAction, Direction);
 }
 
@@ -102,7 +102,7 @@ mod fight_system {
                     let cid = c.cid;
                     let (action, direction) = IStrategyLibraryDispatcher {
                         class_hash: c.strategy
-                    }.determin_action(characters_span, cid, @arenaGrid);
+                    }.determin_action(characters_span, cid);
                     c.action = action;
                     c.direction = direction;
 

@@ -15,9 +15,9 @@ mod models {
 //     mod test_play;
 // }
 
-// mod strategies {
-//     mod testing_strategies;
-// }
+mod strategies {
+    mod testing_strategies;
+}
 
 mod utils;
 mod constants;
