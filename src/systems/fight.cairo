@@ -28,7 +28,7 @@ mod fight_system {
     use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes};
 
     use dojo_arena::constants::{
-        GRID_WIDTH, GRID_HEIGHT
+        GRID_WIDTH, GRID_HEIGHT, TIE
     };
 
     use dojo_arena::utils::{
@@ -107,11 +107,14 @@ mod fight_system {
                     sequence.insert(active_number.into(), cid);
                 }
 
-                if red_survivors == 0 {
-                    arena.winner = Side::Blue;
+                if red_survivors == 0 && blue_survivors == 0 {
+                    arena.winner = TIE;
                     break;
                 } else if blue_survivors == 0 {
                     arena.winner = Side::Red;
+                    break;
+                } else if red_survivors == 0 {
+                    arena.winner = Side::Blue;
                     break;
                 }
 

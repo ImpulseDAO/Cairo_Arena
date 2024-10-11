@@ -53,3 +53,5 @@ const THIRD_POS = Position { x: 0, y: 5 };
 const FOURTH_POS = Position { x: 3, y: 1 };
 const FIFTH_POS = Position { x: 3, y: 3 };
 const SIXTH_POS = Position { x: 3, y: 5 };
+
+const TIE: fel5252 = 'tie';
