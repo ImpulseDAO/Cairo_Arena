@@ -4,10 +4,7 @@ version = 1
 [[package]]
 name = "dojo"
 version = "1.0.0-alpha.4"
-source = "git+https://github.com/dojoengine/dojo?tag=v1.0.0-alpha.10#f105912eddf803294a692c5da70effb4243a4973"
-dependencies = [
- "dojo_plugin",
-]
+source = "git+https://github.com/dojoengine/dojo?tag=v1.0.0-alpha.15#f56c4f90eca84b92f348303dc85ff6e126609f16"
 
 [[package]]
 name = "dojo_arena"
@@ -15,8 +12,3 @@ version = "0.2.0"
 dependencies = [
  "dojo",
 ]
-
-[[package]]
-name = "dojo_plugin"
-version = "1.0.0-alpha.4"
-source = "git+https://github.com/dojoengine/dojo?rev=f15def33#f15def330c0d099e79351d11c197f63e8cc1ff36"

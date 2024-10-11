@@ -1,5 +1,4 @@
-use dojo_arena::models::Arena::{BattleAction, ArenaCharacter, SetTier, Direction};
-use starknet::ClassHash;
+use dojo_arena::models::Arena::{BattleAction, ArenaCharacter, Direction};
 
 #[dojo::interface]
 trait IFight {
@@ -19,34 +18,28 @@ mod fight_system {
     use super::{IFight};
     use super::{IStrategyDispatcherTrait, IStrategyLibraryDispatcher};
 
-    use starknet::{ContractAddress, get_caller_address, ClassHash};
+    use starknet::{ContractAddress, get_caller_address};
     use starknet::{contract_address_const, class_hash_const};
 
     use dojo_arena::models::Arena::{
-        Arena, ArenaCounter, ArenaCharacter, ArenaRegistered, SetTier, BattleAction, Side
-    };
-    use dojo_arena::models::Character::{CharacterInfo, CharacterAttributes};
-
-    use dojo_arena::constants::{
-        GRID_WIDTH, GRID_HEIGHT, TIE, COUNTER_ID, RED, BLUE
+        Arena, ArenaCounter, ArenaCharacter, Side
     };
 
-    use dojo_arena::utils::{
-        calculate_initiative, execute_action, get_level_xp
-    };
+    use dojo_arena::constants::{TIE, COUNTER_ID, RED, BLUE, GRID_WIDTH, GRID_HEIGHT};
 
-    #[derive(Copy, Drop, Serde)]
-    #[dojo::model]
-    #[dojo::event]
-    struct BattleLog {
-        #[key]
-        arena_id: u32,
-        logs: Span<Span<u32>>,
-    }
+    use dojo_arena::utils::{calculate_initiative, execute_action};
+
+    // #[derive(Copy, Drop, Serde)]
+    // #[dojo::model]
+    // #[dojo::event]
+    // struct BattleLog {
+    //     #[key]
+    //     arena_id: u32,
+    //     logs: Span<Span<u32>>,
+    // }
 
     #[abi(embed_v0)]
     impl FightImpl of IFight<ContractState> {
-
         fn play(ref world: IWorldDispatcher, arena_id: u32) {
             let mut counter = get!(world, COUNTER_ID, ArenaCounter);
             assert(arena_id > 0 && arena_id <= counter.arena_count, 'Arena does not exist');
