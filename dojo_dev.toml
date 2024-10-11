@@ -1,6 +1,6 @@
 [world]
 name = "Cairo Arena"
-seed = "test"
+seed = "dev"
 
 [world.socials]
 x = "https://x.com/WarpackMasters"
