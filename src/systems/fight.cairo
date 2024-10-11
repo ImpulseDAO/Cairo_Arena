@@ -22,21 +22,21 @@ mod fight_system {
     use starknet::{contract_address_const, class_hash_const};
 
     use dojo_arena::models::Arena::{
-        Arena, ArenaCounter, ArenaCharacter, Side
+        Arena, ArenaCounter, ArenaCharacter, Side, BattleAction, Direction
     };
 
     use dojo_arena::constants::{TIE, COUNTER_ID, RED, BLUE, GRID_WIDTH, GRID_HEIGHT};
 
     use dojo_arena::utils::{calculate_initiative, execute_action};
 
-    // #[derive(Copy, Drop, Serde)]
-    // #[dojo::model]
-    // #[dojo::event]
-    // struct BattleLog {
-    //     #[key]
-    //     arena_id: u32,
-    //     logs: Span<Span<u32>>,
-    // }
+    #[derive(Copy, Drop, Serde)]
+    #[dojo::model]
+    #[dojo::event]
+    struct BattleLog {
+        #[key]
+        arena_id: u32,
+        logs: Span<Span<u32>>,
+    }
 
     #[abi(embed_v0)]
     impl FightImpl of IFight<ContractState> {
@@ -68,7 +68,10 @@ mod fight_system {
             let mut turn: u8 = 0;
             let mut red_survivors: u8 = 0;
             let mut blue_survivors: u8 = 0;
+            
+            let mut logs = ArrayTrait::new();
             loop {
+                let mut log: Array<u32> = ArrayTrait::new();
                 turn += 1;
 
                 let mut active_number: u8 = 0;
@@ -143,9 +146,66 @@ mod fight_system {
                 while k < active_number {
                     k += 1;
                     let cid = sequence.get(k.into());
-                    execute_action(ref characters, cid, ref arenaGrid);
+                    let c = *characters.at(cid.into() - 1);
+                    let (fail_reason, target_cid)  = execute_action(ref characters, cid, ref arenaGrid);
+
+                    log.append(c.cid.into());
+                    let action = match c.action {
+                        BattleAction::QuickAttack => 1_u32,
+                        BattleAction::PreciseAttack => 2_u32,
+                        BattleAction::HeavyAttack => 3_32,
+                        BattleAction::Move => 4_u32,
+                        BattleAction::Rest => 5_u32,
+                    };
+                    log.append(action);
+                    let direction = match c.direction {
+                        Direction::Up => 1_u32,
+                        Direction::Down => 2_u32,
+                        Direction::Right => 3_u32,
+                        Direction::Left => 4_u32,
+                    };
+                    log.append(direction);
+                    log.append(c.hp);
+                    log.append(c.energy);
+                    log.append(c.position.x.into());
+                    log.append(c.position.y.into());
+                    log.append(fail_reason.into());
+                    if target_cid != 0 {
+                        let target = *characters.at(target_cid.into() - 1);
+                        log.append(target_cid.into());
+                        let action = match target.action {
+                            BattleAction::QuickAttack => 1_u32,
+                            BattleAction::PreciseAttack => 2_u32,
+                            BattleAction::HeavyAttack => 3_32,
+                            BattleAction::Move => 4_u32,
+                            BattleAction::Rest => 5_u32,
+                        };
+                        log.append(action);
+                        let direction = match target.direction {
+                            Direction::Up => 1_u32,
+                            Direction::Down => 2_u32,
+                            Direction::Right => 3_u32,
+                            Direction::Left => 4_u32,
+                        };
+                        log.append(direction);
+                        log.append(target.hp);
+                        log.append(target.energy);
+                        log.append(target.position.x.into());
+                        log.append(target.position.y.into());
+                        log.append(0);
+                    }
                 };
+
+                logs.append(log.span());
             };
+
+            emit!(
+                world,
+                (BattleLog {
+                    arena_id: arena_id,
+                    logs: logs.span()
+                })
+            );
 
             set!(world, (arena));
         }

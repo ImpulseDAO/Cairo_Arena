@@ -122,7 +122,7 @@ fn execute_action(
     ref characters: Array<ArenaCharacter>,
     active_cid: u8,
     ref arenaGrid: Felt252Dict<u8>
-) {
+) -> (u8, u8) {
     let mut c = *characters.at(active_cid.into() - 1);
     let target_pos = match c.direction {
         Direction::Up => {
@@ -155,6 +155,10 @@ fn execute_action(
         },
     };
 
+    // 1: lack of energy, 2: reflect
+    let mut fail_reason: u8 = 0;
+    let mut targetCid: u8 = 0;
+
     match c.action {
         BattleAction::QuickAttack => {
             if c.energy >= QUICK_ATC_ENERGY {
@@ -162,9 +166,9 @@ fn execute_action(
 
                 if c.position.x != target_pos.x || c.position.y == target_pos.y {
                     let grid = target_pos.x * GRID_WIDTH + target_pos.y;
-                    let target_index = arenaGrid.get(grid.into());
-                    if target_index != 0 {
-                        let mut target = *characters.at(target_index.into() - 1);
+                    let target_cid = arenaGrid.get(grid.into());
+                    if target_cid != 0 {
+                        let mut target = *characters.at(target_cid.into() - 1);
 
                         let is_hit = ratio(QUICK_HIT_CHANCE + 2 * (c.attributes.agility).into(), 100);                  
                         if is_hit {
@@ -175,9 +179,15 @@ fn execute_action(
                                 target.hp = 0;
                                 arenaGrid.insert(grid.into(), 0);
                             }
+
+                            targetCid = target_cid;
+                        } else {
+                            fail_reason = 2;
                         }
                     }
                 }
+            } else {
+                fail_reason = 1;
             }
         },
         BattleAction::PreciseAttack => {
@@ -186,9 +196,9 @@ fn execute_action(
                 
                 if c.position.x != target_pos.x || c.position.y == target_pos.y {
                     let grid = target_pos.x * GRID_WIDTH + target_pos.y;
-                    let target_index = arenaGrid.get(grid.into());
-                    if target_index != 0 {
-                        let mut target = *characters.at(target_index.into() - 1);
+                    let target_cid = arenaGrid.get(grid.into());
+                    if target_cid != 0 {
+                        let mut target = *characters.at(target_cid.into() - 1);
 
                         let is_hit = ratio(PRECISE_HIT_CHANCE + 2 * (c.attributes.agility).into(), 100);
                         if is_hit {
@@ -199,9 +209,15 @@ fn execute_action(
                                 target.hp = 0;
                                 arenaGrid.insert(grid.into(), 0);
                             }
+
+                            targetCid = target_cid;
+                        } else {
+                            fail_reason = 2;
                         }
                     }
                 }
+            } else {
+                fail_reason = 1;
             }
         },
         BattleAction::HeavyAttack => {
@@ -210,9 +226,9 @@ fn execute_action(
 
                 if c.position.x != target_pos.x || c.position.y == target_pos.y {
                     let grid = target_pos.x * GRID_WIDTH + target_pos.y;
-                    let target_index = arenaGrid.get(grid.into());
-                    if target_index != 0 {
-                        let mut target = *characters.at(target_index.into() - 1);
+                    let target_cid = arenaGrid.get(grid.into());
+                    if target_cid != 0 {
+                        let mut target = *characters.at(target_cid.into() - 1);
 
                         let is_hit = ratio(HEAVY_HIT_CHANCE + 2 * (c.attributes.agility).into(), 100);
                         if is_hit {
@@ -223,9 +239,15 @@ fn execute_action(
                                 target.hp = 0;
                                 arenaGrid.insert(grid.into(), 0);
                             }
+
+                            targetCid = target_cid;
+                        } else {
+                            fail_reason = 2;
                         }
                     }
                 }   
+            } else {
+                fail_reason = 1;
             }
         },
         BattleAction::Move => {
@@ -234,13 +256,15 @@ fn execute_action(
 
                 if c.position.x != target_pos.x || c.position.y != target_pos.y { 
                     let grid = target_pos.x * GRID_WIDTH + target_pos.y;
-                    let target_index = arenaGrid.get(grid.into());
-                    if target_index == 0 {
+                    let target_cid = arenaGrid.get(grid.into());
+                    if target_cid == 0 {
                         arenaGrid.insert((c.position.x * GRID_WIDTH + c.position.y).into(), 0);
                         arenaGrid.insert(grid.into(), active_cid);
                         c.position = target_pos;
                     }
                 }
+            } else {
+                fail_reason = 1;
             }
         },
         BattleAction::Rest => {
@@ -255,6 +279,8 @@ fn execute_action(
     if c.action != BattleAction::Rest {
         c.consecutive_rest_count = 0;
     }
+
+    (fail_reason, targetCid)
 }
 
 // fn mirror_ation_to_int(action: BattleAction) -> u32 {
