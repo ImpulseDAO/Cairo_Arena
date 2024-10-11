@@ -32,7 +32,7 @@ mod fight_system {
     };
 
     use dojo_arena::utils::{
-        calculate_initiative, execute_action, get_gain_xp, get_level_xp
+        calculate_initiative, execute_action, get_level_xp
     };
 
     #[derive(Copy, Drop, Serde)]
@@ -153,8 +153,6 @@ mod fight_system {
                     execute_action(ref characters, cid, ref arenaGrid);
                 };
             };
-
-            // character_info.experience += get_gain_xp(character_info.level);
 
             set!(world, (arena));
         }

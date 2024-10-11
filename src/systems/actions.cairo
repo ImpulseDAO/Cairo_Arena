@@ -11,6 +11,7 @@ trait IActions {
         strategy: ClassHash
     );
     fn createArena(ref world: IWorldDispatcher, name: felt252, current_tier: SetTier);
+    fn closeArena(ref world: IWorldDispatcher, arena_id: u32);
     fn register(ref world: IWorldDispatcher, arena_id: u32);
     fn level_up(ref world: IWorldDispatcher);
     fn assign_points(
@@ -35,6 +36,7 @@ mod actions {
         HP_MULTIPLIER, BASE_HP, ENERGY_MULTIPLIER, BASE_ENERGY, COUNTER_ID,
         MAX_LEVEL, MAX_STRENGTH, MAX_AGILITY, MAX_VITALITY, MAX_STAMINA,
         FIRST_POS, SECOND_POS, THIRD_POS, FOURTH_POS, FIFTH_POS, SIXTH_POS,
+        TIE, RED, BLUE
     };
 
     use dojo_arena::utils::{
@@ -102,6 +104,41 @@ mod actions {
             };
 
             set!(world, (arena, counter));
+        }
+
+        fn closeArena(ref world: IWorldDispatcher, arena_id: u32) {
+            let player = get_caller_address();
+
+            let mut counter = get!(world, COUNTER_ID, ArenaCounter);
+            assert(arena_id > 0 && arena_id <= counter.arena_count, 'Arena does not exist');
+
+            let mut arena = get!(world, arena_id, Arena);
+            assert(arena.player == player, 'Only arena creator can close');
+            assert(!arena.is_closed, 'Arena is already closed');
+            assert(arena.winner != 0, 'Not ready to be closed');
+
+            if arena.winner != TIE {
+                let mut characters_number = arena.characters_number;
+                let mut i = 0;
+                while i < characters_number {
+                    i += 1;
+                    let c = get!(world, (arena_id, i), ArenaCharacter);
+
+                    let side = match c.side {
+                        Side::Red => RED,
+                        Side::Blue => BLUE,
+                    };
+                    if side == arena.winner {
+                        let mut character_info = get!(world, c.character_owner, CharacterInfo);
+                        character_info.golds += 2000;
+                        character_info.experience += get_gain_xp(character_info.level);
+                        set!(world, (character_info));
+                    }
+                };
+            }
+
+            arena.is_closed = true;
+            set!(world, (arena));
         }
 
         fn register(ref world: IWorldDispatcher, arena_id: u32) {
