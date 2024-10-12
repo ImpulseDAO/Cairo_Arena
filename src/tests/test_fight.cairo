@@ -163,6 +163,6 @@ mod tests {
         fight_system.play(1);
 
         let arena = get!(world, 1, (Arena));
-        println!("Arena Winner {}", arena.winner); 
+        // println!("Arena Winner {}", arena.winner);
     }
 }

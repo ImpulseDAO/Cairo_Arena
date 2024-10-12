@@ -118,12 +118,35 @@ fn ratio(num: u8, deno: u8) -> bool {
     }
 }
 
+fn attack(ref c: ArenaCharacter, ref c1: ArenaCharacter, hit_chance: u8, damage_base: u32, ref arenaGrid: Felt252Dict<u8>) -> (u8, u8) {
+    let mut target_cid = 0;
+    let mut fail_reason = 0;
+    let is_hit = ratio(hit_chance + 2 * (c.attributes.agility).into(), 100);
+    if is_hit {
+        let damage = c.attributes.strength.into() * 2 + damage_base;
+        if c1.hp > damage {
+            c1.hp -= damage;
+        } else {
+            c1.hp = 0;
+            arenaGrid.insert((c1.position.x + c1.position.y * GRID_HEIGHT).into(), 0);
+        }
+        target_cid = c1.cid;
+    } else {
+        fail_reason = 2;
+    }
+
+    (target_cid, fail_reason)
+}
+
 fn execute_action(
-    ref characters: Array<ArenaCharacter>,
-    active_cid: u8,
+    ref c: ArenaCharacter,
+    ref c1: ArenaCharacter,
+    ref c2: ArenaCharacter,
+    ref c3: ArenaCharacter,
+    ref c4: ArenaCharacter,
+    ref c5: ArenaCharacter,
     ref arenaGrid: Felt252Dict<u8>
 ) -> (u8, u8) {
-    let mut c = *characters.at(active_cid.into() - 1);
     let target_pos = match c.direction {
         Direction::Up => {
             if c.position.y < GRID_HEIGHT - 1 {
@@ -159,98 +182,26 @@ fn execute_action(
     let mut fail_reason: u8 = 0;
     let mut targetCid: u8 = 0;
 
-    println!("action: {:?}", c.action);
+    // println!("action: {:?}", c.action);
 
+    let mut energy_cost = 0;
+    let mut hit_chance = 0;
+    let mut damage_base = 0;
     match c.action {
         BattleAction::QuickAttack => {
-            if c.energy >= QUICK_ATC_ENERGY {
-                c.energy -= QUICK_ATC_ENERGY;
-
-                if c.position.x != target_pos.x || c.position.y != target_pos.y {
-                    let grid = target_pos.x + target_pos.y * GRID_HEIGHT;
-                    let target_cid = arenaGrid.get(grid.into());
-                    if target_cid != 0 {
-                        let mut target = *characters.at(target_cid.into() - 1);
-
-                        let is_hit = ratio(QUICK_HIT_CHANCE + 2 * (c.attributes.agility).into(), 100);                  
-                        if is_hit {
-                            let damage = c.attributes.strength.into() * 2 + QUICK_ATC_DAMAGE;
-                            if target.hp > damage {
-                                target.hp -= damage;
-                            } else {
-                                target.hp = 0;
-                                arenaGrid.insert(grid.into(), 0);
-                            }
-
-                            targetCid = target_cid;
-                        } else {
-                            fail_reason = 2;
-                        }
-                    }
-                }
-            } else {
-                fail_reason = 1;
-            }
+            energy_cost = QUICK_ATC_ENERGY;
+            hit_chance = QUICK_HIT_CHANCE;
+            damage_base = QUICK_ATC_DAMAGE;
         },
         BattleAction::PreciseAttack => {
-            if c.energy >= PRECISE_ATC_ENERGY {
-                c.energy -= PRECISE_ATC_ENERGY;
-                
-                if c.position.x != target_pos.x || c.position.y != target_pos.y {
-                    let grid = target_pos.x + target_pos.y * GRID_HEIGHT;
-                    let target_cid = arenaGrid.get(grid.into());
-                    if target_cid != 0 {
-                        let mut target = *characters.at(target_cid.into() - 1);
-
-                        let is_hit = ratio(PRECISE_HIT_CHANCE + 2 * (c.attributes.agility).into(), 100);
-                        if is_hit {
-                            let damage = c.attributes.strength.into() * 3 + PRECISE_ATC_DAMAGE;
-                            if target.hp > damage {
-                                target.hp -= damage;
-                            } else {
-                                target.hp = 0;
-                                arenaGrid.insert(grid.into(), 0);
-                            }
-
-                            targetCid = target_cid;
-                        } else {
-                            fail_reason = 2;
-                        }
-                    }
-                }
-            } else {
-                fail_reason = 1;
-            }
+            energy_cost = PRECISE_ATC_ENERGY;
+            hit_chance = PRECISE_HIT_CHANCE;
+            damage_base = PRECISE_ATC_DAMAGE;
         },
         BattleAction::HeavyAttack => {
-            if c.energy >= HEAVY_ATC_ENERGY {
-                c.energy -= HEAVY_ATC_ENERGY;
-
-                if c.position.x != target_pos.x || c.position.y != target_pos.y {
-                    let grid = target_pos.x + target_pos.y * GRID_HEIGHT;
-                    let target_cid = arenaGrid.get(grid.into());
-                    if target_cid != 0 {
-                        let mut target = *characters.at(target_cid.into() - 1);
-
-                        let is_hit = ratio(HEAVY_HIT_CHANCE + 2 * (c.attributes.agility).into(), 100);
-                        if is_hit {
-                            let damage = c.attributes.strength.into() * 4 + HEAVY_ATC_DAMAGE;
-                            if target.hp > damage {
-                                target.hp -= damage;
-                            } else {
-                                target.hp = 0;
-                                arenaGrid.insert(grid.into(), 0);
-                            }
-
-                            targetCid = target_cid;
-                        } else {
-                            fail_reason = 2;
-                        }
-                    }
-                }   
-            } else {
-                fail_reason = 1;
-            }
+            energy_cost = HEAVY_ATC_ENERGY;
+            hit_chance = HEAVY_HIT_CHANCE;
+            damage_base = HEAVY_ATC_DAMAGE;
         },
         BattleAction::Move => {
             if c.energy >= 1 {
@@ -261,7 +212,7 @@ fn execute_action(
                     let target_cid = arenaGrid.get(grid.into());
                     if target_cid == 0 {
                         arenaGrid.insert((c.position.x + c.position.y * GRID_HEIGHT).into(), 0);
-                        arenaGrid.insert(grid.into(), active_cid);
+                        arenaGrid.insert(grid.into(), c.cid);
                         c.position = target_pos;
                     }
                 }
@@ -284,6 +235,42 @@ fn execute_action(
 
     if c.action != BattleAction::Rest {
         c.consecutive_rest_count = 0;
+    }
+
+    if c.action == BattleAction::QuickAttack || c.action == BattleAction::PreciseAttack || c.action == BattleAction::HeavyAttack {
+        if c.energy >= energy_cost {
+            c.energy -= energy_cost;
+
+            if c.position.x != target_pos.x || c.position.y != target_pos.y {
+                let grid = target_pos.x + target_pos.y * GRID_HEIGHT;
+                let target_cid = arenaGrid.get(grid.into());
+                if target_cid != 0 {
+                    if target_cid == c1.cid {
+                        let (tc, fr) = attack(ref c, ref c1, hit_chance, damage_base, ref arenaGrid);
+                        targetCid = tc;
+                        fail_reason = fr;
+                    } else if target_cid == c2.cid {
+                        let (tc, fr) = attack(ref c, ref c2, hit_chance, damage_base, ref arenaGrid);
+                        targetCid = tc;
+                        fail_reason = fr;
+                    } else if target_cid == c3.cid {
+                        let (tc, fr) = attack(ref c, ref c3, hit_chance, damage_base, ref arenaGrid);
+                        targetCid = tc;
+                        fail_reason = fr;
+                    } else if target_cid == c4.cid {
+                        let (tc, fr) = attack(ref c, ref c4, hit_chance, damage_base, ref arenaGrid);
+                        targetCid = tc;
+                        fail_reason = fr;
+                    } else if target_cid == c5.cid {
+                        let (tc, fr) = attack(ref c, ref c5, hit_chance, damage_base, ref arenaGrid);
+                        targetCid = tc;
+                        fail_reason = fr;
+                    }
+                }
+            }
+        } else {
+            fail_reason = 1;
+        }
     }
 
     (fail_reason, targetCid)

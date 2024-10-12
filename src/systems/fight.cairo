@@ -38,6 +38,38 @@ mod fight_system {
         logs: Span<Span<u32>>,
     }
 
+    #[derive(Copy, Drop, Serde, Introspect)]
+    struct SurvivorNumber {
+        red: u8,
+        blue: u8,
+        active: u8,
+    }
+
+    fn pre_fight(turn: u8, ref c: ArenaCharacter, ref survivors: SurvivorNumber, ref sequence: Felt252Dict<u8>, characters: Span<ArenaCharacter>) {
+        // hit player 20 hp every 5 turns
+        if turn % 5 == 0 {
+            c.hp = if c.hp > 20 { c.hp - 20 } else { 0 };
+        }
+
+        if c.hp > 0 {
+            if c.side == Side::Red {
+                survivors.red += 1;
+            } else {
+                survivors.blue += 1;
+            }
+            survivors.active += 1;
+
+            let (action, direction) = IStrategyLibraryDispatcher {
+                class_hash: c.strategy
+            }.determin_action(characters, c.cid);
+            c.action = action;
+            c.direction = direction;
+    
+            c.initiative = calculate_initiative(action, c.attributes.agility);
+            sequence.insert(survivors.active.into(), c.cid);
+        }
+    }
+
     #[abi(embed_v0)]
     impl FightImpl of IFight<ContractState> {
         fn play(ref world: IWorldDispatcher, arena_id: u32) {
@@ -51,94 +83,76 @@ mod fight_system {
 
             let mut arenaGrid: Felt252Dict<u8> = Default::default();
 
-            let mut characters = ArrayTrait::new();
-            let mut i: u8 = 0;
-            loop {
-                i += 1;
-                if i > characters_number {
-                    break;
-                }
-                let mut c = get!(world, (arena_id, i), ArenaCharacter);
-                characters.append(c);
-
-                let grid = c.position.x + c.position.y * GRID_HEIGHT;
-                arenaGrid.insert(grid.into(), i);
-            };
+            // as Felt252Dict and Array limits, don't support dynamic characters number
+            let mut c1 = get!(world, (arena_id, 1), ArenaCharacter);
+            let c1_grid = c1.position.x + c1.position.y * GRID_HEIGHT;
+            arenaGrid.insert(c1_grid.into(), 1);
+            let mut c2 = get!(world, (arena_id, 2), ArenaCharacter);
+            let c2_grid = c2.position.x + c2.position.y * GRID_HEIGHT;
+            arenaGrid.insert(c2_grid.into(), 2);
+            let mut c3 = get!(world, (arena_id, 3), ArenaCharacter);
+            let c3_grid = c3.position.x + c3.position.y * GRID_HEIGHT;
+            arenaGrid.insert(c3_grid.into(), 3);
+            let mut c4 = get!(world, (arena_id, 4), ArenaCharacter);
+            let c4_grid = c4.position.x + c4.position.y * GRID_HEIGHT;
+            arenaGrid.insert(c4_grid.into(), 4);
+            let mut c5 = get!(world, (arena_id, 5), ArenaCharacter);
+            let c5_grid = c5.position.x + c5.position.y * GRID_HEIGHT;
+            arenaGrid.insert(c5_grid.into(), 5);
+            let mut c6 = get!(world, (arena_id, 6), ArenaCharacter);
+            let c6_grid = c6.position.x + c6.position.y * GRID_HEIGHT;
+            arenaGrid.insert(c6_grid.into(), 6);
 
             let mut turn: u8 = 0;
-
             let mut logs = ArrayTrait::new();
             loop {
                 let mut log: Array<u32> = ArrayTrait::new();
                 turn += 1;
+                // println!("Turn: {}", turn); 
 
-                let mut red_survivors: u8 = 0;
-                let mut blue_survivors: u8 = 0;
-                println!("Turn: {}", turn); 
-
-                let mut active_number: u8 = 0;
-                let mut sequence: Felt252Dict<u8> = Default::default();
-                let characters_span = characters.span();
-
-                let mut c_index: u8 = 0;
-                while c_index < characters_number {
-                    let mut c = *characters.at(c_index.into());
-                    // hit player 20 hp every 5 turns
-                    if turn % 5 == 0 {
-                        c.hp = if c.hp > 20 { c.hp - 20 } else { 0 };
-                    }
-                    println!("Character HP: {}", c.hp);
-                    if c.hp == 0 {
-                        continue;
-                    }
-                    if c.side == Side::Red {
-                        red_survivors += 1;
-                    } else {
-                        blue_survivors += 1;
-                    }
-                    active_number += 1;
-
-                    let cid = c.cid;
-                    let (action, direction) = IStrategyLibraryDispatcher {
-                        class_hash: c.strategy
-                    }.determin_action(characters_span, cid);
-                    c.action = action;
-                    c.direction = direction;
-
-                    c.initiative = calculate_initiative(action, c.attributes.agility);
-                    sequence.insert(active_number.into(), cid);
-
-                    c_index += 1;
+                let mut survivors = SurvivorNumber {
+                    red: 0,
+                    blue: 0,
+                    active: 0,
                 };
 
-                println!("Red survivors: {}", red_survivors);
-                println!("Blue survivors: {}", blue_survivors);
-                if red_survivors == 0 && blue_survivors == 0 {
+                let mut sequence: Felt252Dict<u8> = Default::default();
+                pre_fight(turn, ref c1, ref survivors, ref sequence, array![c1, c2, c3, c4, c5, c6].span());
+                pre_fight(turn, ref c2, ref survivors, ref sequence, array![c1, c2, c3, c4, c5, c6].span());
+                pre_fight(turn, ref c3, ref survivors, ref sequence, array![c1, c2, c3, c4, c5, c6].span());
+                pre_fight(turn, ref c4, ref survivors, ref sequence, array![c1, c2, c3, c4, c5, c6].span());
+                pre_fight(turn, ref c5, ref survivors, ref sequence, array![c1, c2, c3, c4, c5, c6].span());
+                pre_fight(turn, ref c6, ref survivors, ref sequence, array![c1, c2, c3, c4, c5, c6].span());
+                
+                // println!("Red survivors: {}", survivors.red);
+                // println!("Blue survivors: {}", survivors.blue);
+                if survivors.red == 0 && survivors.blue == 0 {
                     arena.winner = TIE;
                     break;
-                } else if blue_survivors == 0 {
+                } else if survivors.blue == 0 {
                     arena.winner = RED;
                     break;
-                } else if red_survivors == 0 {
+                } else if survivors.red == 0 {
                     arena.winner = BLUE;
                     break;
                 }
 
                 // bubble to sort characters by initiative
+                let characters = array![c1, c2, c3, c4, c5, c6];
                 let mut i: u8 = 0;
                 loop {
                     i += 1;
-                    if i > active_number{
+                    if i > survivors.active {
                         break;
                     }
                     let mut j: u8 = 0;
                     loop {
                         j += 1;
-                        if j > active_number - i {
+                        if j > survivors.active - i {
                             break;
                         }
-                        let c1 = characters.at(sequence.get(j.into()).into() - 1);
-                        let c2 = characters.at(sequence.get((j+1).into()).into() - 1);
+                        let c1 = *characters.at(sequence.get(j.into()).into() - 1);
+                        let c2 = *characters.at(sequence.get((j+1).into()).into() - 1);
                         if c1.initiative > c2.initiative || (c1.initiative == c2.initiative && c1.attributes.agility < c2.attributes.agility) {
                             let temp = sequence.get(j.into());
                             sequence.insert(j.into(), sequence.get((j+1).into()));
@@ -148,11 +162,26 @@ mod fight_system {
                 };
 
                 let mut k: u8 = 0;
-                while k < active_number {
+                while k < survivors.active {
                     k += 1;
                     let cid = sequence.get(k.into());
                     let c = *characters.at(cid.into() - 1);
-                    let (fail_reason, target_cid)  = execute_action(ref characters, cid, ref arenaGrid);
+                    let (fail_reason, target_cid) = match cid {
+                        0 => {
+                            assert(false, 'Character does not exist');
+                            (0, 0)
+                        },
+                        1 => execute_action(ref c1, ref c2, ref c3, ref c4, ref c5, ref c6, ref arenaGrid),
+                        2 => execute_action(ref c2, ref c1, ref c3, ref c4, ref c5, ref c6, ref arenaGrid),
+                        3 => execute_action(ref c3, ref c1, ref c2, ref c4, ref c5, ref c6, ref arenaGrid),
+                        4 => execute_action(ref c4, ref c1, ref c2, ref c3, ref c5, ref c6, ref arenaGrid),
+                        5 => execute_action(ref c5, ref c1, ref c2, ref c3, ref c4, ref c6, ref arenaGrid),
+                        6 => execute_action(ref c6, ref c1, ref c2, ref c3, ref c4, ref c5, ref arenaGrid),
+                        _ => {
+                            assert(false, 'Character does not exist');
+                            (0, 0)
+                        },
+                    };
 
                     log.append(c.cid.into());
                     let action = match c.action {
