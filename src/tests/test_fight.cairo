@@ -3,6 +3,7 @@ mod tests {
     use core::starknet::contract_address::ContractAddress;
     use starknet::class_hash::Felt252TryIntoClassHash;
     use starknet::testing::set_contract_address;
+    use starknet::ClassHash;
 
     use dojo::model::{Model, ModelTest, ModelIndex, ModelEntityTest};
     // import world dispatcher
@@ -102,6 +103,10 @@ mod tests {
     #[test]
     #[available_gas(3000000000000000)]
     fn test_play() {
+
+        let s: ClassHash = Strategy::TEST_CLASS_HASH.try_into().unwrap();
+
+        println!("strategy hash {:?}", s);
         let world = spawn_test_world!();
         let (_, mut actions_system, _, mut fight_system) = get_systems(world);
 
@@ -163,6 +168,6 @@ mod tests {
         fight_system.play(1);
 
         let arena = get!(world, 1, (Arena));
-        // println!("Arena Winner {}", arena.winner);
+        println!("Arena Winner {}", arena.winner);
     }
 }
