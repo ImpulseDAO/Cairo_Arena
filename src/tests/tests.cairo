@@ -20,9 +20,6 @@ mod tests {
         ENERGY_MULTIPLIER, BASE_ENERGY
     };
 
-    use debug::PrintTrait;
-
-
     #[test]
     #[available_gas(3000000000000000)]
     fn test_update_strategy() {

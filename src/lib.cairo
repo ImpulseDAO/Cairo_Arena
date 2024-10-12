@@ -12,7 +12,7 @@ mod tests {
     mod test_create_character;
     mod test_create_arena;
     mod test_register;
-//     mod test_play;
+    mod test_fight;
 }
 
 mod strategies {

@@ -61,18 +61,20 @@ mod fight_system {
                 let mut c = get!(world, (arena_id, i), ArenaCharacter);
                 characters.append(c);
 
-                let grid = c.position.x * GRID_WIDTH + c.position.y;
+                let grid = c.position.x + c.position.y * GRID_HEIGHT;
                 arenaGrid.insert(grid.into(), i);
             };
 
             let mut turn: u8 = 0;
-            let mut red_survivors: u8 = 0;
-            let mut blue_survivors: u8 = 0;
-            
+
             let mut logs = ArrayTrait::new();
             loop {
                 let mut log: Array<u32> = ArrayTrait::new();
                 turn += 1;
+
+                let mut red_survivors: u8 = 0;
+                let mut blue_survivors: u8 = 0;
+                println!("Turn: {}", turn); 
 
                 let mut active_number: u8 = 0;
                 let mut sequence: Felt252Dict<u8> = Default::default();
@@ -85,6 +87,7 @@ mod fight_system {
                     if turn % 5 == 0 {
                         c.hp = if c.hp > 20 { c.hp - 20 } else { 0 };
                     }
+                    println!("Character HP: {}", c.hp);
                     if c.hp == 0 {
                         continue;
                     }
@@ -108,6 +111,8 @@ mod fight_system {
                     c_index += 1;
                 };
 
+                println!("Red survivors: {}", red_survivors);
+                println!("Blue survivors: {}", blue_survivors);
                 if red_survivors == 0 && blue_survivors == 0 {
                     arena.winner = TIE;
                     break;

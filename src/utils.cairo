@@ -159,13 +159,15 @@ fn execute_action(
     let mut fail_reason: u8 = 0;
     let mut targetCid: u8 = 0;
 
+    println!("action: {:?}", c.action);
+
     match c.action {
         BattleAction::QuickAttack => {
             if c.energy >= QUICK_ATC_ENERGY {
                 c.energy -= QUICK_ATC_ENERGY;
 
-                if c.position.x != target_pos.x || c.position.y == target_pos.y {
-                    let grid = target_pos.x * GRID_WIDTH + target_pos.y;
+                if c.position.x != target_pos.x || c.position.y != target_pos.y {
+                    let grid = target_pos.x + target_pos.y * GRID_HEIGHT;
                     let target_cid = arenaGrid.get(grid.into());
                     if target_cid != 0 {
                         let mut target = *characters.at(target_cid.into() - 1);
@@ -194,8 +196,8 @@ fn execute_action(
             if c.energy >= PRECISE_ATC_ENERGY {
                 c.energy -= PRECISE_ATC_ENERGY;
                 
-                if c.position.x != target_pos.x || c.position.y == target_pos.y {
-                    let grid = target_pos.x * GRID_WIDTH + target_pos.y;
+                if c.position.x != target_pos.x || c.position.y != target_pos.y {
+                    let grid = target_pos.x + target_pos.y * GRID_HEIGHT;
                     let target_cid = arenaGrid.get(grid.into());
                     if target_cid != 0 {
                         let mut target = *characters.at(target_cid.into() - 1);
@@ -224,8 +226,8 @@ fn execute_action(
             if c.energy >= HEAVY_ATC_ENERGY {
                 c.energy -= HEAVY_ATC_ENERGY;
 
-                if c.position.x != target_pos.x || c.position.y == target_pos.y {
-                    let grid = target_pos.x * GRID_WIDTH + target_pos.y;
+                if c.position.x != target_pos.x || c.position.y != target_pos.y {
+                    let grid = target_pos.x + target_pos.y * GRID_HEIGHT;
                     let target_cid = arenaGrid.get(grid.into());
                     if target_cid != 0 {
                         let mut target = *characters.at(target_cid.into() - 1);
@@ -255,10 +257,10 @@ fn execute_action(
                 c.energy -= 1;
 
                 if c.position.x != target_pos.x || c.position.y != target_pos.y { 
-                    let grid = target_pos.x * GRID_WIDTH + target_pos.y;
+                    let grid = target_pos.x + target_pos.y * GRID_HEIGHT;
                     let target_cid = arenaGrid.get(grid.into());
                     if target_cid == 0 {
-                        arenaGrid.insert((c.position.x * GRID_WIDTH + c.position.y).into(), 0);
+                        arenaGrid.insert((c.position.x + c.position.y * GRID_HEIGHT).into(), 0);
                         arenaGrid.insert(grid.into(), active_cid);
                         c.position = target_pos;
                     }
@@ -268,9 +270,13 @@ fn execute_action(
             }
         },
         BattleAction::Rest => {
-            let rest_penalty = (c.consecutive_rest_count * (c.consecutive_rest_count - 1)).into();
-            if rest_penalty < REST_RECOVERY {
-                c.energy += REST_RECOVERY - rest_penalty;
+            if c.consecutive_rest_count > 1 {
+                let rest_penalty = (c.consecutive_rest_count * (c.consecutive_rest_count - 1)).into();
+                if rest_penalty < REST_RECOVERY {
+                    c.energy += REST_RECOVERY - rest_penalty;
+                }
+            } else {
+                c.energy += REST_RECOVERY;
             }
             c.consecutive_rest_count += 1;
         },

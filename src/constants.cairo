@@ -42,8 +42,8 @@ const MAX_AGILITY: u8 = 9;
 const MAX_VITALITY: u8 = 9;
 const MAX_STAMINA: u8 = 9;
 
-const GRID_WIDTH: u8 = 7;
-const GRID_HEIGHT: u8 = 4;
+const GRID_WIDTH: u8 = 4;
+const GRID_HEIGHT: u8 = 7;
 
 const FIRST_POS: (u8, u8) = (0, 1);
 const SECOND_POS: (u8, u8) = (0, 3);

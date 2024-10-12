@@ -2,7 +2,7 @@ use starknet::ContractAddress;
 use starknet::ClassHash;
 use cairo_arena::models::Character::{CharacterAttributes};
 
-#[derive(Serde, Copy, Drop, Introspect, PartialEq)]
+#[derive(Serde, Copy, Drop, Introspect, PartialEq, Debug)]
 enum BattleAction {
     QuickAttack,
     PreciseAttack,
@@ -48,7 +48,7 @@ struct Position {
     y: u8
 }
 
-#[derive(Serde, Copy, Drop, Introspect, PartialEq)]
+#[derive(Serde, Copy, Drop, Introspect, PartialEq, Debug)]
 enum Direction {
     Up,
     Down,
