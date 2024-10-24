@@ -1,4 +1,4 @@
-use cairo_arena::models::Arena::{BattleAction, ArenaCharacter, SetTier};
+use cairo_arena::models::Arena::{BattleAction, ArenaCharacter, SetTier, Side};
 use cairo_arena::models::Character::{CharacterAttributes};
 use starknet::ClassHash;
 
@@ -12,7 +12,7 @@ trait IActions {
     );
     fn createArena(ref world: IWorldDispatcher, name: felt252);
     fn closeArena(ref world: IWorldDispatcher, arena_id: u32);
-    fn register(ref world: IWorldDispatcher, arena_id: u32);
+    fn register(ref world: IWorldDispatcher, arena_id: u32, side: Side);
     fn level_up(ref world: IWorldDispatcher);
     fn assign_points(
         ref world: IWorldDispatcher, strength: u8, agility: u8, vitality: u8, stamina: u8
@@ -115,6 +115,8 @@ mod actions {
                 characters_number: 1,
                 winner: 0,
                 is_closed: false,
+                red_side_num: 1,
+                blue_side_num: 0,
             };
 
             let hp = character_info.attributes.vitality.into() * HP_MULTIPLIER + BASE_HP;
@@ -182,7 +184,7 @@ mod actions {
             set!(world, (arena));
         }
 
-        fn register(ref world: IWorldDispatcher, arena_id: u32) {
+        fn register(ref world: IWorldDispatcher, arena_id: u32, side: Side) {
             let player = get_caller_address();
 
             let counter = get!(world, COUNTER_ID, ArenaCounter);
@@ -190,8 +192,6 @@ mod actions {
 
             let mut arena = get!(world, arena_id, (Arena));
             assert(!arena.is_closed, 'Arena is closed');
-            assert(arena.characters_number < 6, 'Arena is full');
-            arena.characters_number += 1;
 
             let character_info = get!(world, player, CharacterInfo);
             assert(character_info.name != '', 'Character does not exist');
@@ -212,40 +212,48 @@ mod actions {
                 'Character tier is not allowed'
             );
 
+            assert(arena.characters_number < 6, 'Arena is full');
+
+            let (mut x, mut y, mut direction): (u8, u8, Direction) = (0, 0, Direction::Up);
+            match side {
+                Side::Red => {
+                    assert(arena.red_side_num < 3, 'Red side is full');
+                    arena.red_side_num += 1;
+                    let (px, py) = match arena.red_side_num {
+                        0 => (0, 0),
+                        1 => FIRST_POS,
+                        2 => SECOND_POS,
+                        3 => THIRD_POS,
+                        _ => (0, 0),
+                    };
+                    x = px;
+                    y = py;
+
+                    direction = Direction::Right;
+                },
+                Side::Blue => {
+                    assert(arena.blue_side_num < 3, 'Blue side is full');
+                    arena.blue_side_num += 1;
+                    let (px, py) = match arena.blue_side_num {
+                        0 => (0, 0),
+                        1 => FOURTH_POS,
+                        2 => FIFTH_POS,
+                        3 => SIXTH_POS,
+                        _ => (0, 0),
+                    };
+                    x = px;
+                    y = py;
+                    
+                    direction = Direction::Left;
+                },
+            }
+            arena.characters_number += 1;
+
+
             let hp = character_info.attributes.vitality.into() * HP_MULTIPLIER + BASE_HP;
             let energy = character_info.attributes.stamina.into() * ENERGY_MULTIPLIER + BASE_ENERGY;
 
-            let (x, y): (u8, u8) = match arena.characters_number {
-                0 => {
-                    assert(false, 'Invalid character count');
-                    (0, 0)
-                },
-                1 => FIRST_POS,
-                2 => SECOND_POS,
-                3 => THIRD_POS,
-                4 => FOURTH_POS,
-                5 => FIFTH_POS,
-                6 => SIXTH_POS,
-                _ => {
-                    assert(false, 'Invalid character count');
-                    (0, 0)
-                },
-            };
-
             let position = Position { x, y };
-
-            let (direction, side) = match arena.characters_number {
-                0 => {
-                    assert(false, 'Invalid character count');
-                    (Direction::Up, Side::Red)
-                },
-                1 | 2 | 3 => (Direction::Right, Side::Red),
-                4 | 5 | 6 => (Direction::Left, Side::Blue),
-                _ => {
-                    assert(false, 'Invalid character count');
-                    (Direction::Up, Side::Red)
-                },
-            };
 
             let character = ArenaCharacter {
                 arena_id: arena.id,

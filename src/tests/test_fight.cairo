@@ -14,7 +14,7 @@ mod tests {
     use cairo_arena::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
     use cairo_arena::systems::fight::{fight_system, IFight, IFightDispatcher, IFightDispatcherTrait};
     use cairo_arena::models::Character::{CharacterInfo, CharacterAttributes};
-    use cairo_arena::models::Arena::{Arena, ArenaCounter, SetTier, ArenaCharacter, ArenaRegistered};
+    use cairo_arena::models::Arena::{Arena, ArenaCounter, SetTier, ArenaCharacter, ArenaRegistered, Side};
 
     use cairo_arena::strategies::testing_strategies::Strategy;
 
@@ -127,7 +127,7 @@ mod tests {
             CharacterAttributes { strength: 1, agility: 2, vitality: 1, stamina: 1 },
             Strategy::TEST_CLASS_HASH.try_into().unwrap()
         );
-        actions_system.register(1);
+        actions_system.register(1, Side::Red);
 
         let player3 = starknet::contract_address_const::<0x3>();
         set_contract_address(player3);
@@ -136,7 +136,7 @@ mod tests {
             CharacterAttributes { strength: 1, agility: 2, vitality: 1, stamina: 1 },
             Strategy::TEST_CLASS_HASH.try_into().unwrap()
         );
-        actions_system.register(1);
+        actions_system.register(1, Side::Red);
 
         let player4 = starknet::contract_address_const::<0x4>();
         set_contract_address(player4);
@@ -145,7 +145,7 @@ mod tests {
             CharacterAttributes { strength: 1, agility: 2, vitality: 1, stamina: 1 },
             Strategy::TEST_CLASS_HASH.try_into().unwrap()
         );
-        actions_system.register(1);
+        actions_system.register(1, Side::Blue);
 
         let player5 = starknet::contract_address_const::<0x5>();
         set_contract_address(player5);
@@ -154,7 +154,7 @@ mod tests {
             CharacterAttributes { strength: 1, agility: 2, vitality: 1, stamina: 1 },
             Strategy::TEST_CLASS_HASH.try_into().unwrap()
         );
-        actions_system.register(1);
+        actions_system.register(1, Side::Blue);
 
         let player6 = starknet::contract_address_const::<0x6>();
         set_contract_address(player6);
@@ -163,7 +163,7 @@ mod tests {
             CharacterAttributes { strength: 1, agility: 2, vitality: 1, stamina: 1 },
             Strategy::TEST_CLASS_HASH.try_into().unwrap()
         );
-        actions_system.register(1);
+        actions_system.register(1, Side::Blue);
  
         fight_system.play(1);
 

@@ -44,7 +44,7 @@ mod tests {
                 starknet::class_hash_const::<0x123>()
             );
 
-        actions_system.register(1);
+        actions_system.register(1, Side::Red);
     }
 
     #[test]
@@ -56,7 +56,7 @@ mod tests {
 
         actions_system.createArena('Sky Arena');
 
-        actions_system.register(1);
+        actions_system.register(1, Side::Red);
     }
 
     #[test]
@@ -90,7 +90,7 @@ mod tests {
         set!(world, (alice_info));
 
         set_contract_address(alice);
-        actions_system.register(1);
+        actions_system.register(1, Side::Red);
     }
 
     #[test]
@@ -110,7 +110,7 @@ mod tests {
 
         let counter = get!(world, COUNTER_ID, (ArenaCounter));
 
-        actions_system.register(counter.arena_count);
+        actions_system.register(counter.arena_count, Side::Red);
     }
 
     #[test]
@@ -159,7 +159,7 @@ mod tests {
                 CharacterAttributes { strength: 0, agility: 2, vitality: 3, stamina: 0 },
                 starknet::class_hash_const::<0x123>()
             );
-        actions_system.register(1);
+        actions_system.register(1, Side::Red);
 
         let counter = get!(world, COUNTER_ID, (ArenaCounter));
         let arena = get!(world, counter.arena_count, (Arena));

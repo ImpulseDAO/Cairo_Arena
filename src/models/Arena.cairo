@@ -40,6 +40,8 @@ struct Arena {
     characters_number: u8,
     winner: felt252,
     is_closed: bool,
+    red_side_num: u8,
+    blue_side_num: u8,
 }
 
 #[derive(Copy, Drop, Serde, Introspect)]

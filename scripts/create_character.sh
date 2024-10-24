@@ -13,6 +13,6 @@ echo " "
 echo action system : $ACTIONS_ADDRESS
 echo "---------------------------------------------------------------------------"
 
-sozo execute --world $WORLD_ADDRESS $ACTIONS_ADDRESS createCharacter -c 0x200b3430303074736554,1,1,2,1,809602563858536102455247087715469706703111376074355894222368003699468955833 --wait --rpc-url $STARKNET_RPC_URL \
-	--account-address 0x1e59eb74ce98fced4e9b10cb8d9db58f856194da24984fd64193e0d787ce519 \
-	--private-key 0x76468ff8e97cf4ad25412f6134f3b3ce835ee9732da92b3b6b1974de76b8975
+sozo execute --world $WORLD_ADDRESS $ACTIONS_ADDRESS createCharacter -c 0x5445535430303135,1,1,2,1,0x53673358efd0bed498c39f6726ccbac76281093a653c2522500d7d0481d7085 --wait --rpc-url $STARKNET_RPC_URL \
+	--account-address 0x23ab45933374a72027c7abcf8119353142cf8846f65b0c99e45426766d04de4 \
+	--private-key 0x587692064670966047507699fbfbebb04e93531ca6d8a503519385fe0d2a3e7
