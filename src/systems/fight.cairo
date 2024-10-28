@@ -29,13 +29,15 @@ mod fight_system {
 
     use cairo_arena::utils::{calculate_initiative, execute_action};
 
-    #[derive(Copy, Drop, Serde)]
+    #[derive(Drop, Serde)]
     #[dojo::model]
     #[dojo::event]
     struct BattleLog {
         #[key]
         arena_id: u32,
-        logs: Span<Span<u32>>,
+        #[key]
+        turn: u8,
+        log: Array<u32>,
     }
 
     #[derive(Copy, Drop, Serde, Introspect)]
@@ -104,7 +106,6 @@ mod fight_system {
             arenaGrid.insert(c6_grid.into(), 6);
 
             let mut turn: u8 = 0;
-            let mut logs = ArrayTrait::new();
             loop {
                 let mut log: Array<u32> = ArrayTrait::new();
                 turn += 1;
@@ -230,16 +231,15 @@ mod fight_system {
                     }
                 };
 
-                logs.append(log.span());
+                emit!(
+                    world,
+                    (BattleLog {
+                        arena_id: arena_id,
+                        turn: turn,
+                        log: log,
+                    })
+                );
             };
-
-            emit!(
-                world,
-                (BattleLog {
-                    arena_id: arena_id,
-                    logs: logs.span()
-                })
-            );
 
             set!(world, (arena));
         }
