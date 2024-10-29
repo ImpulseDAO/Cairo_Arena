@@ -16,7 +16,8 @@ mod tests {
 }
 
 mod strategies {
-    mod testing_strategies;
+    mod testing_strategies_walk_around;
+    mod testing_strategies_focus_attack;
 }
 
 mod utils;

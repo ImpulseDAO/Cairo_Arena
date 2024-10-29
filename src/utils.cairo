@@ -118,8 +118,7 @@ fn ratio(num: u8, deno: u8) -> bool {
     }
 }
 
-fn attack(ref c: ArenaCharacter, ref c1: ArenaCharacter, hit_chance: u8, damage_base: u32, ref arenaGrid: Felt252Dict<u8>) -> (u8, u8) {
-    let mut target_cid = 0;
+fn attack(ref c: ArenaCharacter, ref c1: ArenaCharacter, hit_chance: u8, damage_base: u32, ref arenaGrid: Felt252Dict<u8>) -> u8 {
     let mut fail_reason = 0;
     let is_hit = ratio(hit_chance + 2 * (c.attributes.agility).into(), 100);
     if is_hit {
@@ -130,12 +129,11 @@ fn attack(ref c: ArenaCharacter, ref c1: ArenaCharacter, hit_chance: u8, damage_
             c1.hp = 0;
             arenaGrid.insert((c1.position.x + c1.position.y * GRID_HEIGHT).into(), 0);
         }
-        target_cid = c1.cid;
     } else {
         fail_reason = 2;
     }
 
-    (target_cid, fail_reason)
+    fail_reason
 }
 
 fn execute_action(
@@ -180,7 +178,7 @@ fn execute_action(
 
     // 1: lack of energy, 2: reflect
     let mut fail_reason: u8 = 0;
-    let mut targetCid: u8 = 0;
+    let mut target_cid: u8 = 0;
 
     // println!("action: {:?}", c.action);
 
@@ -209,7 +207,7 @@ fn execute_action(
 
                 if c.position.x != target_pos.x || c.position.y != target_pos.y { 
                     let grid = target_pos.x + target_pos.y * GRID_HEIGHT;
-                    let target_cid = arenaGrid.get(grid.into());
+                    target_cid = arenaGrid.get(grid.into());
                     if target_cid == 0 {
                         arenaGrid.insert((c.position.x + c.position.y * GRID_HEIGHT).into(), 0);
                         arenaGrid.insert(grid.into(), c.cid);
@@ -243,28 +241,18 @@ fn execute_action(
 
             if c.position.x != target_pos.x || c.position.y != target_pos.y {
                 let grid = target_pos.x + target_pos.y * GRID_HEIGHT;
-                let target_cid = arenaGrid.get(grid.into());
+                target_cid = arenaGrid.get(grid.into());
                 if target_cid != 0 {
                     if target_cid == c1.cid {
-                        let (tc, fr) = attack(ref c, ref c1, hit_chance, damage_base, ref arenaGrid);
-                        targetCid = tc;
-                        fail_reason = fr;
+                        fail_reason = attack(ref c, ref c1, hit_chance, damage_base, ref arenaGrid);
                     } else if target_cid == c2.cid {
-                        let (tc, fr) = attack(ref c, ref c2, hit_chance, damage_base, ref arenaGrid);
-                        targetCid = tc;
-                        fail_reason = fr;
+                        fail_reason = attack(ref c, ref c2, hit_chance, damage_base, ref arenaGrid);
                     } else if target_cid == c3.cid {
-                        let (tc, fr) = attack(ref c, ref c3, hit_chance, damage_base, ref arenaGrid);
-                        targetCid = tc;
-                        fail_reason = fr;
+                        fail_reason = attack(ref c, ref c3, hit_chance, damage_base, ref arenaGrid);
                     } else if target_cid == c4.cid {
-                        let (tc, fr) = attack(ref c, ref c4, hit_chance, damage_base, ref arenaGrid);
-                        targetCid = tc;
-                        fail_reason = fr;
+                        fail_reason = attack(ref c, ref c4, hit_chance, damage_base, ref arenaGrid);
                     } else if target_cid == c5.cid {
-                        let (tc, fr) = attack(ref c, ref c5, hit_chance, damage_base, ref arenaGrid);
-                        targetCid = tc;
-                        fail_reason = fr;
+                        fail_reason = attack(ref c, ref c5, hit_chance, damage_base, ref arenaGrid);
                     }
                 }
             }
@@ -273,7 +261,7 @@ fn execute_action(
         }
     }
 
-    (fail_reason, targetCid)
+    (fail_reason, target_cid)
 }
 
 // fn mirror_ation_to_int(action: BattleAction) -> u32 {
