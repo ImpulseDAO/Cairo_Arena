@@ -140,7 +140,7 @@ mod fight_system {
                 }
 
                 // bubble to sort characters by initiative
-                let characters = array![c1, c2, c3, c4, c5, c6];
+                let characters = array![@c1, @c2, @c3, @c4, @c5, @c6];
                 let mut i: u8 = 0;
                 loop {
                     i += 1;
@@ -153,9 +153,9 @@ mod fight_system {
                         if j > survivors.active - i {
                             break;
                         }
-                        let c1 = *characters.at(sequence.get(j.into()).into() - 1);
-                        let c2 = *characters.at(sequence.get((j+1).into()).into() - 1);
-                        if c1.initiative > c2.initiative || (c1.initiative == c2.initiative && c1.attributes.agility < c2.attributes.agility) {
+                        let cleft = *(*characters.at(sequence.get(j.into()).into() - 1));
+                        let cright = *(*characters.at(sequence.get((j+1).into()).into() - 1));
+                        if cleft.initiative > cright.initiative || (cleft.initiative == cright.initiative && cleft.attributes.agility < cright.attributes.agility) {
                             let temp = sequence.get(j.into());
                             sequence.insert(j.into(), sequence.get((j+1).into()));
                             sequence.insert((j+1).into(), temp);
@@ -167,7 +167,6 @@ mod fight_system {
                 while k < survivors.active {
                     k += 1;
                     let cid = sequence.get(k.into());
-                    let c = *characters.at(cid.into() - 1);
                     let (fail_reason, target_cid) = match cid {
                         0 => {
                             assert(false, 'Character does not exist');
@@ -185,6 +184,8 @@ mod fight_system {
                         },
                     };
 
+                    let characters = array![@c1, @c2, @c3, @c4, @c5, @c6];
+                    let c = *(*characters.at(cid.into() - 1));
                     log.append(c.cid.into());
                     let action = match c.action {
                         BattleAction::QuickAttack => 1_u32,
@@ -207,7 +208,7 @@ mod fight_system {
                     log.append(c.position.y.into());
                     log.append(fail_reason.into());
                     if target_cid != 0 {
-                        let target = *characters.at(target_cid.into() - 1);
+                        let target = *(*characters.at(target_cid.into() - 1));
                         log.append(target_cid.into());
                         let action = match target.action {
                             BattleAction::QuickAttack => 1_u32,
