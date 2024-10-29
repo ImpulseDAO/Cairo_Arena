@@ -5,5 +5,5 @@ echo RPC URL : $STARKNET_RPC_URL
 echo "---------------------------------------------------------------------------"
 
 sncast -u $STARKNET_RPC_URL \
-    --account worldowner \
+    --account world-owner \
     declare -c Strategy

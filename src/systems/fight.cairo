@@ -37,7 +37,7 @@ mod fight_system {
         arena_id: u32,
         #[key]
         turn: u8,
-        log: Array<u32>,
+        battle_log: Span<u32>,
     }
 
     #[derive(Copy, Drop, Serde, Introspect)]
@@ -80,6 +80,7 @@ mod fight_system {
 
             let mut arena = get!(world, arena_id, Arena);
             assert(!arena.is_closed, 'Arena is closed');
+            assert(arena.winner == 0, 'Arena is already finished');
             let characters_number = arena.characters_number;
             assert(characters_number == 6, 'Arena is not ready');
 
@@ -236,7 +237,7 @@ mod fight_system {
                     (BattleLog {
                         arena_id: arena_id,
                         turn: turn,
-                        log: log,
+                        battle_log: log.span(),
                     })
                 );
             };

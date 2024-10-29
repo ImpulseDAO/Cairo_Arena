@@ -150,13 +150,13 @@ mod actions {
         }
 
         fn closeArena(ref world: IWorldDispatcher, arena_id: u32) {
-            let player = get_caller_address();
+            // let player = get_caller_address();
 
             let mut counter = get!(world, COUNTER_ID, ArenaCounter);
             assert(arena_id > 0 && arena_id <= counter.arena_count, 'Arena does not exist');
 
             let mut arena = get!(world, arena_id, Arena);
-            assert(arena.player == player, 'Only arena creator can close');
+            // assert(arena.player == player, 'Only arena creator can close');
             assert(!arena.is_closed, 'Arena is already closed');
             assert(arena.winner != 0, 'Not ready to be closed');
 
