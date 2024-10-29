@@ -119,12 +119,15 @@ mod fight_system {
                 };
 
                 let mut sequence: Felt252Dict<u8> = Default::default();
-                pre_fight(turn, ref c1, ref survivors, ref sequence, array![c1, c2, c3, c4, c5, c6].span());
-                pre_fight(turn, ref c2, ref survivors, ref sequence, array![c1, c2, c3, c4, c5, c6].span());
-                pre_fight(turn, ref c3, ref survivors, ref sequence, array![c1, c2, c3, c4, c5, c6].span());
-                pre_fight(turn, ref c4, ref survivors, ref sequence, array![c1, c2, c3, c4, c5, c6].span());
-                pre_fight(turn, ref c5, ref survivors, ref sequence, array![c1, c2, c3, c4, c5, c6].span());
-                pre_fight(turn, ref c6, ref survivors, ref sequence, array![c1, c2, c3, c4, c5, c6].span());
+                
+                let chars = array![c1, c2, c3, c4, c5, c6].span();
+                // pre_fight(turn, ref c1, ref survivors, ref sequence, array![c1, c2, c3, c4, c5, c6].span());
+                pre_fight(turn, ref c1, ref survivors, ref sequence, chars);
+                pre_fight(turn, ref c2, ref survivors, ref sequence, chars);
+                pre_fight(turn, ref c3, ref survivors, ref sequence, chars);
+                pre_fight(turn, ref c4, ref survivors, ref sequence, chars);
+                pre_fight(turn, ref c5, ref survivors, ref sequence, chars);
+                pre_fight(turn, ref c6, ref survivors, ref sequence, chars);
                 
                 // println!("Red survivors: {}", survivors.red);
                 // println!("Blue survivors: {}", survivors.blue);
