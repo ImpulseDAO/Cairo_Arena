@@ -16,7 +16,7 @@ mod tests {
     use cairo_arena::models::Character::{CharacterInfo, CharacterAttributes};
     use cairo_arena::models::Arena::{Arena, ArenaCounter, SetTier, ArenaCharacter, ArenaRegistered, Side};
 
-    use cairo_arena::strategies::testing_strategies::Strategy;
+    use cairo_arena::strategies::{testing_strategies_walk_around, testing_strategies_focus_attack};
 
     use cairo_arena::constants::COUNTER_ID;
 
@@ -104,7 +104,7 @@ mod tests {
     #[available_gas(3000000000000000)]
     fn test_play() {
 
-        let s: ClassHash = Strategy::TEST_CLASS_HASH.try_into().unwrap();
+        let s: ClassHash = testing_strategies_walk_around::Strategy::TEST_CLASS_HASH.try_into().unwrap();
 
         println!("strategy hash {:?}", s);
         let world = spawn_test_world!();
@@ -116,7 +116,7 @@ mod tests {
         actions_system.createCharacter(
             'p1',
             CharacterAttributes { strength: 1, agility: 1, vitality: 2, stamina: 1 },
-            Strategy::TEST_CLASS_HASH.try_into().unwrap()
+            testing_strategies_focus_attack::Strategy::TEST_CLASS_HASH.try_into().unwrap()
         );
         actions_system.createArena('Sky Arena');
         
@@ -125,7 +125,7 @@ mod tests {
         actions_system.createCharacter(
             'p2',
             CharacterAttributes { strength: 1, agility: 2, vitality: 1, stamina: 1 },
-            Strategy::TEST_CLASS_HASH.try_into().unwrap()
+            testing_strategies_walk_around::Strategy::TEST_CLASS_HASH.try_into().unwrap()
         );
         actions_system.register(1, Side::Red);
 
@@ -134,7 +134,7 @@ mod tests {
         actions_system.createCharacter(
             'p3',
             CharacterAttributes { strength: 1, agility: 2, vitality: 1, stamina: 1 },
-            Strategy::TEST_CLASS_HASH.try_into().unwrap()
+            testing_strategies_walk_around::Strategy::TEST_CLASS_HASH.try_into().unwrap()
         );
         actions_system.register(1, Side::Red);
 
@@ -143,7 +143,7 @@ mod tests {
         actions_system.createCharacter(
             'p4',
             CharacterAttributes { strength: 1, agility: 2, vitality: 1, stamina: 1 },
-            Strategy::TEST_CLASS_HASH.try_into().unwrap()
+            testing_strategies_walk_around::Strategy::TEST_CLASS_HASH.try_into().unwrap()
         );
         actions_system.register(1, Side::Blue);
 
@@ -152,7 +152,7 @@ mod tests {
         actions_system.createCharacter(
             'p5',
             CharacterAttributes { strength: 1, agility: 2, vitality: 1, stamina: 1 },
-            Strategy::TEST_CLASS_HASH.try_into().unwrap()
+            testing_strategies_walk_around::Strategy::TEST_CLASS_HASH.try_into().unwrap()
         );
         actions_system.register(1, Side::Blue);
 
@@ -161,7 +161,7 @@ mod tests {
         actions_system.createCharacter(
             'p6',
             CharacterAttributes { strength: 1, agility: 2, vitality: 1, stamina: 1 },
-            Strategy::TEST_CLASS_HASH.try_into().unwrap()
+            testing_strategies_walk_around::Strategy::TEST_CLASS_HASH.try_into().unwrap()
         );
         actions_system.register(1, Side::Blue);
  
