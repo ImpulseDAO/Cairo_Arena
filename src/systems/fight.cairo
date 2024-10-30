@@ -216,7 +216,7 @@ mod fight_system {
                         let action = match target.action {
                             BattleAction::QuickAttack => 1_u32,
                             BattleAction::PreciseAttack => 2_u32,
-                            BattleAction::HeavyAttack => 3_32,
+                            BattleAction::HeavyAttack => 3_u32,
                             BattleAction::Move => 4_u32,
                             BattleAction::Rest => 5_u32,
                         };
