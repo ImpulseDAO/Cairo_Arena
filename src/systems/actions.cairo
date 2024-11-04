@@ -3,7 +3,7 @@ use cairo_arena::models::Character::{CharacterAttributes};
 use starknet::ClassHash;
 
 #[starknet::interface]
-pub trait IActionss<T> {
+pub trait IActions<T> {
     fn createCharacter(
         ref self: T,
         name: felt252,
@@ -42,6 +42,8 @@ pub mod actions {
     use cairo_arena::utils::{
         calculate_initiative, execute_action, get_gain_xp, get_level_xp
     };
+
+    use dojo::model::{ModelStorage, ModelValueStorage};
 
     #[abi(embed_v0)]
     impl ActionsImpl of IActions<ContractState> {

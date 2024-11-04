@@ -29,6 +29,9 @@ pub mod fight_system {
 
     use cairo_arena::utils::{calculate_initiative, execute_action};
 
+    use dojo::model::{ModelStorage, ModelValueStorage};
+    use dojo::event::EventStorage;
+
     #[derive(Drop, Serde)]
     #[dojo::event]
     pub struct BattleLog {
