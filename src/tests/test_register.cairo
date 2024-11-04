@@ -4,38 +4,43 @@ mod tests {
     use starknet::class_hash::Felt252TryIntoClassHash;
     use starknet::testing::set_contract_address;
 
-    use dojo::model::{Model, ModelTest, ModelIndex, ModelEntityTest};
-    // import world dispatcher
-    use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
-
-    use dojo::utils::test::{spawn_test_world, deploy_contract};
+    use dojo::model::{ModelStorage, ModelValueStorage, ModelStorageTest};
+    use dojo::world::WorldStorageTrait;
+    use dojo_cairo_test::{spawn_test_world, NamespaceDef, TestResource, ContractDefTrait};
 
     use cairo_arena::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
-    use cairo_arena::models::Character::{CharacterInfo, CharacterAttributes};
-    use cairo_arena::models::Arena::{Arena, ArenaCounter, SetTier, ArenaCharacter, ArenaRegistered, Direction, Side};
+    use cairo_arena::models::Arena::{Arena, m_Arena, ArenaCounter, m_ArenaCounter, SetTier, ArenaCharacter, m_ArenaCharacter, ArenaRegistered, m_ArenaRegistered, Side, Direction};
+    use cairo_arena::models::Character::{CharacterInfo, m_CharacterInfo, CharacterAttributes};
 
     use cairo_arena::constants::{COUNTER_ID, HP_MULTIPLIER, BASE_HP, ENERGY_MULTIPLIER, BASE_ENERGY};
 
-    fn get_systems(world: IWorldDispatcher) -> (ContractAddress, IActionsDispatcher,) {
-        let actions_address = world
-            .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
-        let mut actions_system = IActionsDispatcher { contract_address: actions_address };
-
-        world.grant_writer(Model::<CharacterInfo>::selector(), actions_address);
-        world.grant_writer(Model::<Arena>::selector(), actions_address);
-        world.grant_writer(Model::<ArenaCounter>::selector(), actions_address);
-        world.grant_writer(Model::<ArenaCharacter>::selector(), actions_address);
-        world.grant_writer(Model::<ArenaRegistered>::selector(), actions_address);
-
-        (actions_address, actions_system,)
+    fn namespace_def() -> NamespaceDef {
+        let ndef = NamespaceDef {
+            namespace: "arena", resources: [
+                TestResource::Model(m_Arena::TEST_CLASS_HASH.try_into().unwrap()),
+                TestResource::Model(m_ArenaCounter::TEST_CLASS_HASH.try_into().unwrap()),
+                TestResource::Model(m_ArenaCharacter::TEST_CLASS_HASH.try_into().unwrap()),
+                TestResource::Model(m_ArenaRegistered::TEST_CLASS_HASH.try_into().unwrap()),
+                TestResource::Model(m_CharacterInfo::TEST_CLASS_HASH.try_into().unwrap()),
+                TestResource::Contract(
+                    ContractDefTrait::new(actions::TEST_CLASS_HASH, "actions")
+                        .with_writer_of([dojo::utils::bytearray_hash(@"arena")].span())
+                )
+            ].span()
+        };
+ 
+        ndef
     }
 
     #[test]
     #[should_panic(expected: ('Arena does not exist', 'ENTRYPOINT_FAILED'))]
     #[available_gas(3000000000000000)]
     fn test_register_arena_not_exists() {
-        let world = spawn_test_world!();
-        let (_, mut actions_system,) = get_systems(world);
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+
+        let (contract_address, _) = world.dns(@"actions").unwrap();
+        let actions_system = IActionsDispatcher { contract_address };
 
         actions_system
             .createCharacter(
@@ -51,8 +56,11 @@ mod tests {
     #[should_panic(expected: ('Character does not exist', 'ENTRYPOINT_FAILED'))]
     #[available_gas(3000000000000000)]
     fn test_register_character_not_exists() {
-        let world = spawn_test_world!();
-        let (_, mut actions_system,) = get_systems(world);
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+
+        let (contract_address, _) = world.dns(@"actions").unwrap();
+        let actions_system = IActionsDispatcher { contract_address };
 
         actions_system.createArena('Sky Arena');
 
@@ -63,10 +71,13 @@ mod tests {
     #[should_panic(expected: ('Character tier is not allowed', 'ENTRYPOINT_FAILED'))]
     #[available_gas(3000000000000000)]
     fn test_register_tier_not_match() {
-        let admin = starknet::contract_address_const::<0x0>();
-        let world = spawn_test_world!();
-        let (_, mut actions_system,) = get_systems(world);
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
 
+        let (contract_address, _) = world.dns(@"actions").unwrap();
+        let actions_system = IActionsDispatcher { contract_address };
+
+        let admin = starknet::contract_address_const::<0x0>();
         actions_system
             .createCharacter(
                 'asten',
@@ -85,9 +96,10 @@ mod tests {
             );
 
         set_contract_address(admin);
-        let mut alice_info = get!(world, alice, (CharacterInfo));
+        let mut alice_info: CharacterInfo = world.read_model(alice);
         alice_info.level = 1;
-        set!(world, (alice_info));
+
+        world.write_model(@alice_info);
 
         set_contract_address(alice);
         actions_system.register(1, Side::Red);
@@ -97,8 +109,11 @@ mod tests {
     #[should_panic(expected: ('Character already registered', 'ENTRYPOINT_FAILED'))]
     #[available_gas(3000000000000000)]
     fn test_play_player_already_registered() {
-        let world = spawn_test_world!();
-        let (_, mut actions_system,) = get_systems(world);
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+
+        let (contract_address, _) = world.dns(@"actions").unwrap();
+        let actions_system = IActionsDispatcher { contract_address };
 
         actions_system
             .createCharacter(
@@ -108,7 +123,7 @@ mod tests {
             );
         actions_system.createArena('Sky Arena');
 
-        let counter = get!(world, COUNTER_ID, (ArenaCounter));
+        let counter: ArenaCounter = world.read_model(COUNTER_ID);
 
         actions_system.register(counter.arena_count, Side::Red);
     }
@@ -116,8 +131,11 @@ mod tests {
     #[test]
     #[available_gas(3000000000000000)]
     fn test_register() {
-        let world = spawn_test_world!();
-        let (_, mut actions_system,) = get_systems(world);
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+
+        let (contract_address, _) = world.dns(@"actions").unwrap();
+        let actions_system = IActionsDispatcher { contract_address };
 
         let player = starknet::contract_address_const::<0x0>();
 
@@ -129,11 +147,11 @@ mod tests {
             );
         actions_system.createArena('Sky Arena');
 
-        let counter = get!(world, COUNTER_ID, (ArenaCounter));
-        let arena = get!(world, counter.arena_count, (Arena));
+        let counter: ArenaCounter = world.read_model(COUNTER_ID);
+        let arena: Arena = world.read_model(counter.arena_count);
         assert(arena.characters_number == 1, 'Character count is not correct');
 
-        let character = get!(world, (arena.id, arena.characters_number), (ArenaCharacter));
+        let character: ArenaCharacter = world.read_model((arena.id, arena.characters_number));
         assert(character.name == 'asten', 'name is not correct');
         assert(character.attributes.strength == 2, 'strength is not correct');
         assert(character.attributes.agility == 2, 'agility is not correct');
@@ -161,11 +179,11 @@ mod tests {
             );
         actions_system.register(1, Side::Red);
 
-        let counter = get!(world, COUNTER_ID, (ArenaCounter));
-        let arena = get!(world, counter.arena_count, (Arena));
+        let counter: ArenaCounter = world.read_model(COUNTER_ID);
+        let arena: Arena = world.read_model(counter.arena_count);
         assert(arena.characters_number == 2, 'Character count is not correct');
 
-        let character = get!(world, (arena.id, arena.characters_number), (ArenaCharacter));
+        let character: ArenaCharacter = world.read_model((arena.id, arena.characters_number));
         assert(character.name == 'alice', 'name is not correct');
         assert(character.attributes.strength == 1, 'strength is not correct');
         assert(character.attributes.agility == 3, 'agility is not correct');

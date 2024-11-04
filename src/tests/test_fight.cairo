@@ -5,47 +5,54 @@ mod tests {
     use starknet::testing::set_contract_address;
     use starknet::ClassHash;
 
-    use dojo::model::{Model, ModelTest, ModelIndex, ModelEntityTest};
-    // import world dispatcher
-    use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
+    use dojo::model::{ModelStorage, ModelValueStorage, ModelStorageTest};
+    use dojo::world::WorldStorageTrait;
+    use dojo_cairo_test::{spawn_test_world, NamespaceDef, TestResource, ContractDefTrait};
 
-    use dojo::utils::test::{spawn_test_world, deploy_contract};
-
-    use cairo_arena::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
     use cairo_arena::systems::fight::{fight_system, IFight, IFightDispatcher, IFightDispatcherTrait};
-    use cairo_arena::models::Character::{CharacterInfo, CharacterAttributes};
-    use cairo_arena::models::Arena::{Arena, ArenaCounter, SetTier, ArenaCharacter, ArenaRegistered, Side};
+    use cairo_arena::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
+    use cairo_arena::models::Arena::{Arena, m_Arena, ArenaCounter, m_ArenaCounter, SetTier, ArenaCharacter, m_ArenaCharacter, ArenaRegistered, m_ArenaRegistered, Side};
+    use cairo_arena::models::Character::{CharacterInfo, m_CharacterInfo, CharacterAttributes};
 
     use cairo_arena::strategies::{testing_strategies_walk_around, testing_strategies_focus_attack};
 
     use cairo_arena::constants::COUNTER_ID;
 
-    fn get_systems(world: IWorldDispatcher) -> (ContractAddress, IActionsDispatcher, ContractAddress, IFightDispatcher) {
-        let actions_address = world
-            .deploy_contract('salt1', actions::TEST_CLASS_HASH.try_into().unwrap());
-        let mut actions_system = IActionsDispatcher { contract_address: actions_address };
-        world.grant_writer(Model::<CharacterInfo>::selector(), actions_address);
-        world.grant_writer(Model::<Arena>::selector(), actions_address);
-        world.grant_writer(Model::<ArenaCounter>::selector(), actions_address);
-        world.grant_writer(Model::<ArenaCharacter>::selector(), actions_address);
-        world.grant_writer(Model::<ArenaRegistered>::selector(), actions_address);
-
-        let fight_system_address = world.deploy_contract('salt2', fight_system::TEST_CLASS_HASH.try_into().unwrap());
-        let mut fight_system = IFightDispatcher { contract_address: fight_system_address };
-        world.grant_writer(Model::<Arena>::selector(), fight_system_address);
-        world.grant_writer(Model::<ArenaCounter>::selector(), fight_system_address);
-        world.grant_writer(Model::<ArenaCharacter>::selector(), fight_system_address);
-        world.grant_writer(Model::<ArenaRegistered>::selector(), fight_system_address);
-
-        (actions_address, actions_system, fight_system_address, fight_system)
+    fn namespace_def() -> NamespaceDef {
+        let ndef = NamespaceDef {
+            namespace: "arena", resources: [
+                TestResource::Model(m_Arena::TEST_CLASS_HASH.try_into().unwrap()),
+                TestResource::Model(m_ArenaCounter::TEST_CLASS_HASH.try_into().unwrap()),
+                TestResource::Model(m_ArenaCharacter::TEST_CLASS_HASH.try_into().unwrap()),
+                TestResource::Model(m_ArenaRegistered::TEST_CLASS_HASH.try_into().unwrap()),
+                TestResource::Model(m_CharacterInfo::TEST_CLASS_HASH.try_into().unwrap()),
+                TestResource::Event(fight_system::e_BattleLog::TEST_CLASS_HASH.try_into().unwrap()),
+                TestResource::Contract(
+                    ContractDefTrait::new(actions::TEST_CLASS_HASH, "actions")
+                        .with_writer_of([dojo::utils::bytearray_hash(@"arena")].span())
+                ),
+                TestResource::Contract(
+                    ContractDefTrait::new(fight_system::TEST_CLASS_HASH, "fight_system")
+                        .with_writer_of([dojo::utils::bytearray_hash(@"arena")].span())
+                )
+            ].span()
+        };
+ 
+        ndef
     }
 
     #[test]
     #[should_panic(expected: ('Arena is not ready', 'ENTRYPOINT_FAILED'))]
     #[available_gas(3000000000000000)]
     fn test_play_arena_not_ready() {
-        let world = spawn_test_world!();
-        let (_, mut actions_system, _, mut fight_system) = get_systems(world);
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+
+        let (actions_contract_address, _) = world.dns(@"actions").unwrap();
+        let actions_system = IActionsDispatcher { contract_address: actions_contract_address };
+
+        let (fight_contract_address, _) = world.dns(@"fight_system").unwrap();
+        let fight_system = IFightDispatcher { contract_address: fight_contract_address };
 
         actions_system
             .createCharacter(
@@ -55,7 +62,7 @@ mod tests {
             );
         actions_system.createArena('Sky Arena');
 
-        let counter = get!(world, COUNTER_ID, (ArenaCounter));
+        let counter: ArenaCounter = world.read_model(COUNTER_ID);
 
         fight_system.play(counter.arena_count);
     }
@@ -64,8 +71,14 @@ mod tests {
     #[should_panic(expected: ('Arena does not exist', 'ENTRYPOINT_FAILED'))]
     #[available_gas(3000000000000000)]
     fn test_play_arena_not_exist() {
-        let world = spawn_test_world!();
-        let (_, mut actions_system, _, fight_system) = get_systems(world);
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+
+        let (actions_contract_address, _) = world.dns(@"actions").unwrap();
+        let actions_system = IActionsDispatcher { contract_address: actions_contract_address };
+
+        let (fight_contract_address, _) = world.dns(@"fight_system").unwrap();
+        let fight_system = IFightDispatcher { contract_address: fight_contract_address };
 
         actions_system
             .createCharacter(
@@ -81,8 +94,14 @@ mod tests {
     #[should_panic(expected: ('Arena is closed', 'ENTRYPOINT_FAILED'))]
     #[available_gas(3000000000000000)]
     fn test_play_arena_already_closed() {
-        let world = spawn_test_world!();
-        let (_, mut actions_system, _, fight_system) = get_systems(world);
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+
+        let (actions_contract_address, _) = world.dns(@"actions").unwrap();
+        let actions_system = IActionsDispatcher { contract_address: actions_contract_address };
+
+        let (fight_contract_address, _) = world.dns(@"fight_system").unwrap();
+        let fight_system = IFightDispatcher { contract_address: fight_contract_address };
 
         actions_system
             .createCharacter(
@@ -92,10 +111,11 @@ mod tests {
             );
 
         actions_system.createArena('Sky Arena');
-        let counter = get!(world, COUNTER_ID, (ArenaCounter));
-        let mut arena = get!(world, counter.arena_count, (Arena));
+        let counter: ArenaCounter = world.read_model(COUNTER_ID);
+        let mut arena: Arena = world.read_model(counter.arena_count);
         arena.is_closed = true;
-        set!(world, (arena));
+
+        world.write_model(@arena);
 
         fight_system.play(counter.arena_count);
     }
@@ -103,12 +123,17 @@ mod tests {
     #[test]
     #[available_gas(3000000000000000)]
     fn test_play() {
-
         let s: ClassHash = testing_strategies_walk_around::Strategy::TEST_CLASS_HASH.try_into().unwrap();
-
         println!("strategy hash {:?}", s);
-        let world = spawn_test_world!();
-        let (_, mut actions_system, _, mut fight_system) = get_systems(world);
+        
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+
+        let (actions_contract_address, _) = world.dns(@"actions").unwrap();
+        let actions_system = IActionsDispatcher { contract_address: actions_contract_address };
+
+        let (fight_contract_address, _) = world.dns(@"fight_system").unwrap();
+        let fight_system = IFightDispatcher { contract_address: fight_contract_address };
 
         let player1 = starknet::contract_address_const::<0x1>();
         set_contract_address(player1);
@@ -167,7 +192,7 @@ mod tests {
  
         fight_system.play(1);
 
-        let arena = get!(world, 1, (Arena));
+        let arena: Arena = world.read_model(1);
         println!("Arena Winner {}", arena.winner);
     }
 }

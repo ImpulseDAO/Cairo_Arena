@@ -10,8 +10,8 @@ mod tests {
 
     use cairo_arena::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
     use cairo_arena::models::Arena::{Arena, m_Arena, ArenaCounter, m_ArenaCounter, SetTier, ArenaCharacter, m_ArenaCharacter, ArenaRegistered, m_ArenaRegistered};
-    use cairo_arena::constants::COUNTER_ID;
     use cairo_arena::models::Character::{CharacterInfo, m_CharacterInfo, CharacterAttributes};
+    use cairo_arena::constants::COUNTER_ID;
 
     fn namespace_def() -> NamespaceDef {
         let ndef = NamespaceDef {
