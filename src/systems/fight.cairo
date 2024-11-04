@@ -33,7 +33,7 @@ pub mod fight_system {
     use dojo::event::EventStorage;
 
     #[derive(Drop, Serde)]
-    #[dojo::event]
+    #[dojo::event(historical: true)]
     pub struct BattleLog {
         #[key]
         arena_id: u32,
