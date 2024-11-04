@@ -16,3 +16,6 @@ rpc_url = ""
 # Default account for katana with seed = 0
 account_address = ""
 private_key = ""
+
+[writers]
+"arena" = ["arena-actions", "arena-fight_system"]

@@ -4,8 +4,8 @@ pushd $(dirname "$0")/..
 
 : "${STARKNET_RPC_URL:?Environment variable STARKNET_RPC_URL must be set}"
 
-export WORLD_ADDRESS=$(cat ./manifests/dev/deployment/manifest.json | jq -r '.world.address')
-export ACTIONS_ADDRESS=$(cat ./manifests/dev/deployment/manifest.json | jq -r '.contracts[] | select(.tag == "Arena-actions" and .kind == "DojoContract").address')
+export WORLD_ADDRESS=$(cat ./manifest_dev.json | jq -r '.world.address')
+export ACTIONS_ADDRESS=$(cat ./manifest_dev.json | jq -r '.contracts[] | select(.tag == "arena-actions").address')
 
 echo "---------------------------------------------------------------------------"
 echo world : $WORLD_ADDRESS

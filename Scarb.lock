@@ -3,7 +3,7 @@ version = 1
 
 [[package]]
 name = "cairo_arena"
-version = "0.2.160"
+version = "0.2.1"
 dependencies = [
  "dojo",
  "dojo_cairo_test",
