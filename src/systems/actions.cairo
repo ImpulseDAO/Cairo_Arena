@@ -2,26 +2,26 @@ use cairo_arena::models::Arena::{BattleAction, ArenaCharacter, SetTier, Side};
 use cairo_arena::models::Character::{CharacterAttributes};
 use starknet::ClassHash;
 
-#[dojo::interface]
-trait IActions {
+#[starknet::interface]
+pub trait IActionss<T> {
     fn createCharacter(
-        ref world: IWorldDispatcher,
+        ref self: T,
         name: felt252,
         attributes: CharacterAttributes,
         strategy: ClassHash
     );
-    fn createArena(ref world: IWorldDispatcher, name: felt252);
-    fn closeArena(ref world: IWorldDispatcher, arena_id: u32);
-    fn register(ref world: IWorldDispatcher, arena_id: u32, side: Side);
-    fn level_up(ref world: IWorldDispatcher);
+    fn createArena(ref self: T, name: felt252);
+    fn closeArena(ref self: T, arena_id: u32);
+    fn register(ref self: T, arena_id: u32, side: Side);
+    fn level_up(ref self: T);
     fn assign_points(
-        ref world: IWorldDispatcher, strength: u8, agility: u8, vitality: u8, stamina: u8
+        ref self: T, strength: u8, agility: u8, vitality: u8, stamina: u8
     );
-    fn update_strategy(ref world: IWorldDispatcher, strategy: ClassHash);
+    fn update_strategy(ref self: T, strategy: ClassHash);
 }
 
 #[dojo::contract]
-mod actions {
+pub mod actions {
     use super::{IActions};
 
     use starknet::{ContractAddress, get_caller_address, ClassHash};
@@ -46,14 +46,16 @@ mod actions {
     #[abi(embed_v0)]
     impl ActionsImpl of IActions<ContractState> {
         fn createCharacter(
-            ref world: IWorldDispatcher,
+            ref self: ContractState,
             name: felt252,
             attributes: CharacterAttributes,
             strategy: ClassHash
         ) {
+            let mut world = self.world(@"arena");
+
             let player = get_caller_address();
 
-            let character_info = get!(world, player, CharacterInfo);
+            let character_info: CharacterInfo = world.read_model(player);
             assert(character_info.name == '', 'Character already exists');
 
             assert(name != '', 'name cannot be empty');
@@ -73,27 +75,25 @@ mod actions {
                 stamina: 1 + attributes.stamina,
             };
 
-            set!(
-                world,
-                (
-                    CharacterInfo {
-                        player,
-                        name,
-                        attributes,
-                        strategy,
-                        level: 0,
-                        experience: 0,
-                        points: 0,
-                        golds: 0,
-                    },
-                )
-            );
+            let new_character_info = CharacterInfo {
+                player,
+                name,
+                attributes,
+                strategy,
+                level: 0,
+                experience: 0,
+                points: 0,
+                golds: 0,
+            };
+            world.write_model(@new_character_info);
         }
 
-        fn createArena(ref world: IWorldDispatcher, name: felt252) {
+        fn createArena(ref self: ContractState, name: felt252) {
+            let mut world = self.world(@"arena");
+
             let player = get_caller_address();
 
-            let character_info = get!(world, player, CharacterInfo);
+            let character_info: CharacterInfo = world.read_model(player);
             assert(character_info.name != '', 'Character does not exist');
 
             let current_tier = match character_info.level {
@@ -104,7 +104,7 @@ mod actions {
                 _ => SetTier::Tier1,
             };
 
-            let mut counter = get!(world, COUNTER_ID, ArenaCounter);
+            let mut counter: ArenaCounter = world.read_model(COUNTER_ID);
             counter.arena_count += 1;
 
             let arena = Arena {
@@ -143,19 +143,24 @@ mod actions {
                 side: Side::Red,
             };
 
-            let mut registered = get!(world, (arena.id, player), ArenaRegistered);
+            let mut registered: ArenaRegistered = world.read_model((arena.id, player));
             registered.registered = true;
 
-            set!(world, (arena, counter, character, registered));
+            world.write_model(@arena);
+            world.write_model(@character);
+            world.write_model(@registered);
+            world.write_model(@counter);
         }
 
-        fn closeArena(ref world: IWorldDispatcher, arena_id: u32) {
+        fn closeArena(ref self: ContractState, arena_id: u32) {
+            let mut world = self.world(@"arena");
+
             // let player = get_caller_address();
 
-            let mut counter = get!(world, COUNTER_ID, ArenaCounter);
+            let mut counter: ArenaCounter = world.read_model(COUNTER_ID);
             assert(arena_id > 0 && arena_id <= counter.arena_count, 'Arena does not exist');
 
-            let mut arena = get!(world, arena_id, Arena);
+            let mut arena: Arena = world.read_model(arena_id);
             // assert(arena.player == player, 'Only arena creator can close');
             assert(!arena.is_closed, 'Arena is already closed');
             assert(arena.winner != 0, 'Not ready to be closed');
@@ -165,38 +170,40 @@ mod actions {
                 let mut i = 0;
                 while i < characters_number {
                     i += 1;
-                    let c = get!(world, (arena_id, i), ArenaCharacter);
+                    let c: ArenaCharacter = world.read_model((arena_id, i));
 
                     let side = match c.side {
                         Side::Red => RED,
                         Side::Blue => BLUE,
                     };
                     if side == arena.winner {
-                        let mut character_info = get!(world, c.character_owner, CharacterInfo);
+                        let mut character_info: CharacterInfo = world.read_model(c.character_owner);
                         character_info.golds += 2000;
                         character_info.experience += get_gain_xp(character_info.level);
-                        set!(world, (character_info));
+                        world.write_model(@character_info);
                     }
                 };
             }
 
             arena.is_closed = true;
-            set!(world, (arena));
+            world.write_model(@arena);
         }
 
-        fn register(ref world: IWorldDispatcher, arena_id: u32, side: Side) {
+        fn register(ref self: ContractState, arena_id: u32, side: Side) {
+            let mut world = self.world(@"arena");
+
             let player = get_caller_address();
 
-            let counter = get!(world, COUNTER_ID, ArenaCounter);
+            let counter: ArenaCounter = world.read_model(COUNTER_ID);
             assert(arena_id > 0 && arena_id <= counter.arena_count, 'Arena does not exist');
 
-            let mut arena = get!(world, arena_id, (Arena));
+            let mut arena: Arena = world.read_model(arena_id);
             assert(!arena.is_closed, 'Arena is closed');
 
-            let character_info = get!(world, player, CharacterInfo);
+            let character_info: CharacterInfo = world.read_model(player);
             assert(character_info.name != '', 'Character does not exist');
 
-            let mut registered = get!(world, (arena_id, player), ArenaRegistered);
+            let mut registered: ArenaRegistered = world.read_model((arena_id, player));
             assert(!registered.registered, 'Character already registered');
             registered.registered = true;
 
@@ -273,13 +280,17 @@ mod actions {
                 side,
             };
 
-            set!(world, (arena, character, registered));
+            world.write_model(@arena);
+            world.write_model(@character);
+            world.write_model(@registered);
         }
 
-        fn level_up(ref world: IWorldDispatcher) {
+        fn level_up(ref self: ContractState) {
+            let mut world = self.world(@"arena");
+
             let player = get_caller_address();
 
-            let mut character_info = get!(world, player, CharacterInfo);
+            let mut character_info: CharacterInfo = world.read_model(player);
             assert(character_info.level < MAX_LEVEL, 'Max level reached');
 
             let level_xp = get_level_xp(character_info.level);
@@ -289,15 +300,17 @@ mod actions {
             character_info.level += 1;
             character_info.points += 1;
 
-            set!(world, (character_info));
+            world.write_model(@character_info);
         }
 
         fn assign_points(
-            ref world: IWorldDispatcher, strength: u8, agility: u8, vitality: u8, stamina: u8
+            ref self: ContractState, strength: u8, agility: u8, vitality: u8, stamina: u8
         ) {
+            let mut world = self.world(@"arena");
+            
             let player = get_caller_address();
 
-            let mut character_info = get!(world, player, CharacterInfo);
+            let mut character_info: CharacterInfo = world.read_model(player);
             assert(strength + agility + vitality + stamina > 0, 'No points to assign');
             assert(
                 character_info.points >= strength + agility + vitality + stamina,
@@ -322,18 +335,19 @@ mod actions {
             character_info.attributes = attributes;
             character_info.points -= 1;
 
-            set!(world, (character_info));
+            world.write_model(@character_info);
         }
 
-        fn update_strategy(ref world: IWorldDispatcher, strategy: ClassHash) {
+        fn update_strategy(ref self: ContractState, strategy: ClassHash) {
+            let mut world = self.world(@"arena");
+
             let player = get_caller_address();
 
             // TODO: Consume XP / Experience Points to enable updates
-
-            let mut character_info = get!(world, player, CharacterInfo);
+            let mut character_info: CharacterInfo = world.read_model(player);
             character_info.strategy = strategy;
 
-            set!(world, (character_info));
+            world.write_model(@character_info);
         }
     }
 }

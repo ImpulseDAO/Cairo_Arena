@@ -1,20 +1,20 @@
 use cairo_arena::models::Arena::{BattleAction, ArenaCharacter, Direction};
 
-#[dojo::interface]
-trait IFight {
-    fn play(ref world: IWorldDispatcher, arena_id: u32);
-    fn get_number_of_players(ref world: IWorldDispatcher, arena_id: u32) -> u8;
+#[starknet::interface]
+pub trait IFight<T> {
+    fn play(ref self: T, arena_id: u32);
+    fn get_number_of_players(ref self: T, arena_id: u32) -> u8;
 }
 
 #[starknet::interface]
-trait IStrategy<TContractState> {
+pub trait IStrategy<TContractState> {
     fn determin_action(
         self: @TContractState, characters: Span<ArenaCharacter>, active_cid: u8
     ) -> (BattleAction, Direction);
 }
 
 #[dojo::contract]
-mod fight_system {
+pub mod fight_system {
     use super::{IFight};
     use super::{IStrategyDispatcherTrait, IStrategyLibraryDispatcher};
 
@@ -30,9 +30,8 @@ mod fight_system {
     use cairo_arena::utils::{calculate_initiative, execute_action};
 
     #[derive(Drop, Serde)]
-    #[dojo::model]
     #[dojo::event]
-    struct BattleLog {
+    pub struct BattleLog {
         #[key]
         arena_id: u32,
         #[key]
@@ -74,11 +73,13 @@ mod fight_system {
 
     #[abi(embed_v0)]
     impl FightImpl of IFight<ContractState> {
-        fn play(ref world: IWorldDispatcher, arena_id: u32) {
-            let mut counter = get!(world, COUNTER_ID, ArenaCounter);
+        fn play(ref self: ContractState, arena_id: u32) {
+            let mut world = self.world(@"arena");
+
+            let mut counter: ArenaCounter = world.read_model(COUNTER_ID);
             assert(arena_id > 0 && arena_id <= counter.arena_count, 'Arena does not exist');
 
-            let mut arena = get!(world, arena_id, Arena);
+            let mut arena: Arena = world.read_model(arena_id);
             assert(!arena.is_closed, 'Arena is closed');
             assert(arena.winner == 0, 'Arena is already finished');
             let characters_number = arena.characters_number;
@@ -87,22 +88,22 @@ mod fight_system {
             let mut arenaGrid: Felt252Dict<u8> = Default::default();
 
             // as Felt252Dict and Array limits, don't support dynamic characters number
-            let mut c1 = get!(world, (arena_id, 1), ArenaCharacter);
+            let mut c1: ArenaCharacter = world.read_model((arena_id, 1));
             let c1_grid = c1.position.x + c1.position.y * GRID_HEIGHT;
             arenaGrid.insert(c1_grid.into(), 1);
-            let mut c2 = get!(world, (arena_id, 2), ArenaCharacter);
+            let mut c2: ArenaCharacter = world.read_model((arena_id, 2));
             let c2_grid = c2.position.x + c2.position.y * GRID_HEIGHT;
             arenaGrid.insert(c2_grid.into(), 2);
-            let mut c3 = get!(world, (arena_id, 3), ArenaCharacter);
+            let mut c3: ArenaCharacter = world.read_model((arena_id, 3));
             let c3_grid = c3.position.x + c3.position.y * GRID_HEIGHT;
             arenaGrid.insert(c3_grid.into(), 3);
-            let mut c4 = get!(world, (arena_id, 4), ArenaCharacter);
+            let mut c4: ArenaCharacter = world.read_model((arena_id, 4));
             let c4_grid = c4.position.x + c4.position.y * GRID_HEIGHT;
             arenaGrid.insert(c4_grid.into(), 4);
-            let mut c5 = get!(world, (arena_id, 5), ArenaCharacter);
+            let mut c5: ArenaCharacter = world.read_model((arena_id, 5));
             let c5_grid = c5.position.x + c5.position.y * GRID_HEIGHT;
             arenaGrid.insert(c5_grid.into(), 5);
-            let mut c6 = get!(world, (arena_id, 6), ArenaCharacter);
+            let mut c6: ArenaCharacter = world.read_model((arena_id, 6));
             let c6_grid = c6.position.x + c6.position.y * GRID_HEIGHT;
             arenaGrid.insert(c6_grid.into(), 6);
 
@@ -236,25 +237,23 @@ mod fight_system {
                     }
                 };
 
-                emit!(
-                    world,
-                    (BattleLog {
-                        arena_id: arena_id,
-                        turn: turn,
-                        battle_log: log.span(),
-                    })
-                );
+                world.emit_event(@BattleLog {
+                    arena_id: arena_id,
+                    turn: turn,
+                    battle_log: log.span(),
+                });
             };
 
-            set!(world, (arena));
+            world.write_model(@arena);
         }
 
-        fn get_number_of_players(ref world: IWorldDispatcher, arena_id: u32) -> u8 {
-            let world = self.world_dispatcher.read();
-            let mut counter = get!(world, COUNTER_ID, ArenaCounter);
+        fn get_number_of_players(ref self: ContractState, arena_id: u32) -> u8 {
+            let mut world = self.world(@"arena");
+
+            let counter: ArenaCounter = world.read_model(COUNTER_ID);
             assert(counter.arena_count >= arena_id && arena_id > 0, 'Arena does not exist');
 
-            let arena = get!(world, arena_id, Arena);
+            let arena: Arena = world.read_model(arena_id);
             arena.characters_number
         }
     }

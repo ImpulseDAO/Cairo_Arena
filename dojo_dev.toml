@@ -9,7 +9,7 @@ github = "https://github.com/ImpulseDAO/Cairo_Arena"
 telegram = ""
 
 [namespace]
-default = "Arena"
+default = "arena"
 
 [env]
 rpc_url = ""
