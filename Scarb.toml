@@ -17,3 +17,5 @@ dojo_cairo_test = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.0.
 sierra = true
 
 build-external-contracts = ["dojo::world::world_contract::world"]
+
+[profile.sepolia]

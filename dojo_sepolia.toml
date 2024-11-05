@@ -12,7 +12,7 @@ telegram = ""
 default = "arena"
 
 [env]
-rpc_url = "https://api.cartridge.gg/x/arena-0-2-1/katana"
+rpc_url = "https://api.cartridge.gg/x/starknet/sepolia"
 # Default account for katana with seed = 0
 account_address = ""
 private_key = ""
