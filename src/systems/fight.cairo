@@ -179,12 +179,12 @@ pub mod fight_system {
                             assert(false, 'Character does not exist');
                             (0, 0)
                         },
-                        1 => execute_action(ref c1, ref c2, ref c3, ref c4, ref c5, ref c6, ref arenaGrid),
-                        2 => execute_action(ref c2, ref c1, ref c3, ref c4, ref c5, ref c6, ref arenaGrid),
-                        3 => execute_action(ref c3, ref c1, ref c2, ref c4, ref c5, ref c6, ref arenaGrid),
-                        4 => execute_action(ref c4, ref c1, ref c2, ref c3, ref c5, ref c6, ref arenaGrid),
-                        5 => execute_action(ref c5, ref c1, ref c2, ref c3, ref c4, ref c6, ref arenaGrid),
-                        6 => execute_action(ref c6, ref c1, ref c2, ref c3, ref c4, ref c5, ref arenaGrid),
+                        1 => execute_action(ref c1, ref c2, ref c3, ref c4, ref c5, ref c6, ref arenaGrid, turn),
+                        2 => execute_action(ref c2, ref c1, ref c3, ref c4, ref c5, ref c6, ref arenaGrid, turn),
+                        3 => execute_action(ref c3, ref c1, ref c2, ref c4, ref c5, ref c6, ref arenaGrid, turn),
+                        4 => execute_action(ref c4, ref c1, ref c2, ref c3, ref c5, ref c6, ref arenaGrid, turn),
+                        5 => execute_action(ref c5, ref c1, ref c2, ref c3, ref c4, ref c6, ref arenaGrid, turn),
+                        6 => execute_action(ref c6, ref c1, ref c2, ref c3, ref c4, ref c5, ref arenaGrid, turn),
                         _ => {
                             assert(false, 'Character does not exist');
                             (0, 0)

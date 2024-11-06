@@ -7,6 +7,8 @@ use cairo_arena::constants::{
 };
 use traits::{Into};
 
+use core::poseidon::poseidon_hash_span;
+
 
 fn calculate_initiative(action: BattleAction, agility: u8) -> u8 {
     let modifier = agility + agility * AGI_INITIATIVE_MODIFIER / 100;
@@ -106,9 +108,8 @@ fn get_level_xp(level: u8) -> u32 {
     }
 }
 
-fn ratio(num: u8, deno: u8) -> bool {
-    let tx = starknet::get_tx_info().unbox().transaction_hash;
-    let seed: u256 = tx.into();
+fn ratio(num: u8, deno: u8, salt: u8) -> bool {
+    let seed = seed_from_transaction_hash(salt);
 
     let result = seed.low % deno.into() + 1;
     if result <= num.into() {
@@ -118,9 +119,14 @@ fn ratio(num: u8, deno: u8) -> bool {
     }
 }
 
-fn attack(ref c: ArenaCharacter, ref c1: ArenaCharacter, hit_chance: u8, damage_base: u32, ref arenaGrid: Felt252Dict<u8>) -> u8 {
+fn seed_from_transaction_hash(salt: u8) -> u256 {
+    return poseidon_hash_span(array![starknet::get_tx_info().unbox().transaction_hash.into(), salt.into()].span())
+        .into();
+}
+
+fn attack(ref c: ArenaCharacter, ref c1: ArenaCharacter, hit_chance: u8, damage_base: u32, ref arenaGrid: Felt252Dict<u8>, salt: u8) -> u8 {
     let mut fail_reason = 0;
-    let is_hit = ratio(hit_chance + 2 * (c.attributes.agility).into(), 100);
+    let is_hit = ratio(hit_chance + 2 * (c.attributes.agility).into(), 100, salt);
     if is_hit {
         let damage = c.attributes.strength.into() * 2 + damage_base;
         if c1.hp > damage {
@@ -143,7 +149,8 @@ fn execute_action(
     ref c3: ArenaCharacter,
     ref c4: ArenaCharacter,
     ref c5: ArenaCharacter,
-    ref arenaGrid: Felt252Dict<u8>
+    ref arenaGrid: Felt252Dict<u8>,
+    salt: u8,
 ) -> (u8, u8) {
     let target_pos = match c.direction {
         Direction::Up => {
@@ -244,15 +251,15 @@ fn execute_action(
                 target_cid = arenaGrid.get(grid.into());
                 if target_cid != 0 {
                     if target_cid == c1.cid {
-                        fail_reason = attack(ref c, ref c1, hit_chance, damage_base, ref arenaGrid);
+                        fail_reason = attack(ref c, ref c1, hit_chance, damage_base, ref arenaGrid, salt);
                     } else if target_cid == c2.cid {
-                        fail_reason = attack(ref c, ref c2, hit_chance, damage_base, ref arenaGrid);
+                        fail_reason = attack(ref c, ref c2, hit_chance, damage_base, ref arenaGrid, salt);
                     } else if target_cid == c3.cid {
-                        fail_reason = attack(ref c, ref c3, hit_chance, damage_base, ref arenaGrid);
+                        fail_reason = attack(ref c, ref c3, hit_chance, damage_base, ref arenaGrid, salt);
                     } else if target_cid == c4.cid {
-                        fail_reason = attack(ref c, ref c4, hit_chance, damage_base, ref arenaGrid);
+                        fail_reason = attack(ref c, ref c4, hit_chance, damage_base, ref arenaGrid, salt);
                     } else if target_cid == c5.cid {
-                        fail_reason = attack(ref c, ref c5, hit_chance, damage_base, ref arenaGrid);
+                        fail_reason = attack(ref c, ref c5, hit_chance, damage_base, ref arenaGrid, salt);
                     }
                 }
             }
